@@ -67,6 +67,22 @@ psi_file is an instance of `com.intellij.psi.PsiFile`
   ```
 
 </p>
+
+## Python Plugin Sample
+
+Download this zip file [python_plugin_sample](https://github.com/binarybeing/HotCat/blob/main/python_plugin_sample/python_plugin_sample.zip).
+Then install it:
+`Tools -> HotCat -> Install Plugin... -> choose python_plugin_sample.zip`
+
+Use it:
+`Tools -> HotCat -> my-hello-plugin`
+
+![image](https://user-images.githubusercontent.com/79463662/195058962-f58c3f9b-db41-4380-89ae-6f40aab92196.png)
+
+after click confirm button, you can see `echo good` running in the IDEA terminal.
+![image](https://user-images.githubusercontent.com/79463662/195059500-2014bfaa-cc13-4d30-8198-2cb72ef2309b.png)
+
+
 </p>
 
 This IDEA plugin is an orginal version, only few interfaces are complished, and maybe some bugs here. let me know if something troubled you. 
