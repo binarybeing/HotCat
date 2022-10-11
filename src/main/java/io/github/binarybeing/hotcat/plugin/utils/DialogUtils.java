@@ -28,6 +28,13 @@ public class DialogUtils extends DialogWrapper {
         init();
     }
 
+    public static void showError(String title, String msg) {
+        JOptionPane.showMessageDialog(null, msg, title, JOptionPane.ERROR_MESSAGE);
+    }
+    public static void showMsg(String title, String msg) {
+        JOptionPane.showMessageDialog(null, msg, title, JOptionPane.INFORMATION_MESSAGE);
+    }
+
 
     public static String showInputDialog(AnActionEvent event, String title, String label) {
         Semaphore semaphore = new Semaphore(0);

@@ -94,6 +94,14 @@ public class IdeaPanelController extends AbstractController {
             return this;
         }
 
+        public void showMsg(String title, String info, String type) {
+            if ("error".equals(type)) {
+                DialogUtils.showError(title, info);
+            } else {
+                DialogUtils.showMsg(title, info);
+            }
+        }
+
 
         public IdeaPanel showForm(String label, Map<String, String> formInfo){
             return this;
