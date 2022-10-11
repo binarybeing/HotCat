@@ -106,17 +106,16 @@ public class PluginFileUtils {
     public static void unzip(File file, String pluginDirName) {
         try {
             LogUtils.addLog("unzip plugin file: " + file.getAbsolutePath());
-            File pluginDir = new File(pluginDirName);
-            if (!pluginDir.exists() && !pluginDir.mkdir()) {
-                LogUtils.addLog("unzip plugin fail, plugin dir load fail : " + pluginDir.getAbsolutePath());
+            File pluginHome = new File(pluginDirName);
+            if (!pluginHome.exists() && !pluginHome.mkdir()) {
+                LogUtils.addLog("unzip plugin fail, plugin dir load fail : " + pluginHome.getAbsolutePath());
                 return;
             }
-            FileUtils.forceDelete(pluginDir);
-            if (!pluginDir.mkdir()) {
-                LogUtils.addLog("unzip plugin fail, plugin dir load fail : " + pluginDir.getAbsolutePath());
-                return;
+            File subPlugin = new File(pluginDirName + "/" + file.getName().replace(".zip", ""));
+            if (subPlugin.exists()) {
+                FileUtils.forceDelete(subPlugin);
             }
-            ZipUtil.extract(Path.of(file.toURI()), Path.of(pluginDir.toURI()), null, true);
+            ZipUtil.extract(Path.of(file.toURI()), Path.of(pluginHome.toURI()), null, true);
             LogUtils.addLog("unzip plugin success: " + file.getAbsolutePath());
         } catch (Exception e) {
             LogUtils.addLog("unzip plugin fail: " + e.getMessage());

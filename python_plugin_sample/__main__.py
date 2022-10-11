@@ -17,9 +17,19 @@ if __name__ == '__main__':
     httpClient = http_client.HttpClient("http://127.0.0.1:" + port)
 
     script = "panel.setTitle(\"Hello World\")" \
-                  ".showInput(\"Your Name\",\"user_name\",\"\")" \
+                  ".showInput(\"terminal command you want to execute\",\"shell_script\",\"echo hello\")" \
                   ".showSelect(\"Your Gender\",\"gender\", [\"default\", \"male\", \"female\"],\"default\")" \
                   ".showAndGet()"
     resp = httpClient.post("/api/idea/panel", {"eventId": eventId,
                                                "script": script})
-    print(resp.text)
+
+    import json
+    resp = json.loads(resp.text)
+    if resp["code"] == 200:
+        print(resp["data"]["shell_script"])
+
+        script = "terminal.setTab(\"my terminal\")" \
+                 ".setScript(\""+resp["data"]["shell_script"]+"\")" \
+                 ".start()"
+        httpClient.post("/api/idea/terminal", {"eventId": eventId,
+                                                "script": script})
