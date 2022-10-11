@@ -1,0 +1,44 @@
+<!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
+<idea-plugin>
+    <!-- Unique identifier of the plugin. It should be FQN. It cannot be changed between the plugin versions. -->
+    <id>io.github.binarybeing.hotcat.plugin</id>
+
+    <!-- Public plugin name should be written in Title Case.
+         Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-name -->
+    <name>HotCat</name>
+
+    <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
+    <vendor email="cnhejh@outlook.com">binary being</vendor>
+
+    <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
+         Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
+         Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
+    <description><![CDATA[
+        <p>HotCat is a plugin which provider a set of simple http interfaces. you can use it to get information from idea such as the file or text you selected, or you can send command to idea to control terminal or show dialog and so on.</p>
+        <p>This version is an origin version, maybe some bugs here, let me know if something confused you.</p>
+        <br>
+    <em>HotCat</em>
+  ]]></description>
+
+    <!-- Product and plugin compatibility requirements.
+         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
+    <depends>com.intellij.modules.platform</depends>
+    <depends>org.jetbrains.plugins.terminal</depends>
+
+    <!-- Extension points defined by the plugin.
+         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
+    <extensions defaultExtensionNs="com.intellij">
+
+    </extensions>
+
+    <actions>
+        <!-- action group -->
+        <group id="HotCatGroup" text="HotCat" class="io.github.binarybeing.hotcat.plugin.HotCatActionGroup" popup="true">
+            <add-to-group group-id="EditorPopupMenu" anchor="before" relative-to-action="$Paste"/>
+            <!--            右键到文件夹区的处理-->
+            <add-to-group group-id="CutCopyPasteGroup" anchor="before" relative-to-action="$Paste"/>
+            <add-to-group group-id="ToolsMenu" anchor="first"/>
+        </group>
+
+    </actions>
+</idea-plugin>
