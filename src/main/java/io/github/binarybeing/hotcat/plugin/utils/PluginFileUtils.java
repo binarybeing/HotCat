@@ -103,22 +103,42 @@ public class PluginFileUtils {
         }
     }
 
-    public static void unzip(File file, String pluginDirName) {
+    public static File unzip(File file, String pluginDirName) {
         try {
             LogUtils.addLog("unzip plugin file: " + file.getAbsolutePath());
             File pluginHome = new File(pluginDirName);
             if (!pluginHome.exists() && !pluginHome.mkdir()) {
                 LogUtils.addLog("unzip plugin fail, plugin dir load fail : " + pluginHome.getAbsolutePath());
-                return;
+                return null;
             }
-            File subPlugin = new File(pluginDirName + "/" + file.getName().replace(".zip", ""));
-            if (subPlugin.exists()) {
-                FileUtils.forceDelete(subPlugin);
+            File tempDir = new File(pluginHome, "temp");
+            ZipUtil.extract(Path.of(file.toURI()), Path.of(tempDir.toURI()), null, true);
+            File[] files = tempDir.listFiles();
+            if (files == null || files.length == 0) {
+                LogUtils.addLog("unzip plugin fail, plugin dir has no file : " + tempDir.getAbsolutePath());
+                boolean delete = tempDir.delete();
+                return null;
             }
-            ZipUtil.extract(Path.of(file.toURI()), Path.of(pluginHome.toURI()), null, true);
+            File pluginFile = files[0];
+            File deployTargetFile = new File(pluginDirName + "/" + pluginFile.getName());
+            if (deployTargetFile.exists()) {
+                deleteDir(deployTargetFile);
+            }
+            boolean rename = pluginFile.renameTo(deployTargetFile);
+            if (!rename) {
+                LogUtils.addLog("unzip plugin fail, plugin dir rename fail : " + deployTargetFile.getAbsolutePath());
+                tempDir.delete();
+                return null;
+            }
+            if (!tempDir.delete()) {
+                LogUtils.addLog("unzip plugin success: " + file.getAbsolutePath());
+                return null;
+            }
             LogUtils.addLog("unzip plugin success: " + file.getAbsolutePath());
+            return deployTargetFile;
         } catch (Exception e) {
             LogUtils.addLog("unzip plugin fail: " + e.getMessage());
+            return null;
         }
     }
 

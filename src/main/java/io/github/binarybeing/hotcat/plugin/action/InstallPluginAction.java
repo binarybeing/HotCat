@@ -52,11 +52,9 @@ public class InstallPluginAction extends AnAction {
             LogUtils.addLog("Install Plugin Success: " + file.getName());
             String pluginDirName = PluginFileUtils.getPluginDirName();
 
+            File pluginDir = PluginFileUtils.unzip(file, pluginDirName);
 
-            PluginFileUtils.unzip(file, pluginDirName);
-            File pluginDir = new File(pluginDirName + "/" + file.getName().replace(".zip", ""));
-
-            if (pluginDir.exists()) {
+            if (pluginDir != null && pluginDir.exists()) {
                 File[] files = pluginDir.listFiles();
                 if (files != null) {
                     for (File file1 : files) {
