@@ -2,12 +2,12 @@
 
 ![image](https://user-images.githubusercontent.com/79463662/195034782-0ef26749-86d5-4973-8df5-23903c0af9bc.png)
 
-HotCat is a plugin which provider a set of simple http interfaces. you can use it to get information from idea such as the file or text you selected, or you can send command to idea to control terminal or show dialog and so on.
+HotCat is a plugin which provide a set of simple http interfaces. you can use it to get information from idea such as the file or text you selected, or you can send command to idea to control terminal or show dialog and so on.
 
 ## How It Works?
 HotCat is a http api platform, and python plugin is suported. When HotCat is loaded, a http server is started too. The http server receive request then return infomation from IDEA or operate it directly.
 </p>
-python plugin will be call like this:
+python plugin will be called like this:
 
 ```
 python3 $plugin_dir $local_http_port $idea_event_id
