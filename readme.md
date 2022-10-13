@@ -79,7 +79,7 @@ Use it:
 
 ![image](https://user-images.githubusercontent.com/79463662/195058962-f58c3f9b-db41-4380-89ae-6f40aab92196.png)
 
-after click confirm button, you can see `echo good` running in the IDEA terminal.
+after click confirm button, you can see `echo hello` running in the IDEA terminal.
 ![image](https://user-images.githubusercontent.com/79463662/195059500-2014bfaa-cc13-4d30-8198-2cb72ef2309b.png)
 
 
