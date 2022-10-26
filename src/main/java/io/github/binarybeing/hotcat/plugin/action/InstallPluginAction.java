@@ -48,8 +48,8 @@ public class InstallPluginAction extends AnAction {
         if (project == null) {
             return;
         }
-        if (toSelect == null){
-            toSelect = project.getBaseDir();
+        if (toSelect == null && project.getProjectFile() != null) {
+            toSelect = project.getProjectFile().getParent();
         }
         FileChooser.chooseFile(descriptor, project, toSelect, new Consumer<VirtualFile>() {
             @Override
