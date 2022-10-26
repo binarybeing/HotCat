@@ -31,7 +31,7 @@ public class LogUtils {
         List<String> list = new ArrayList<>();
         while (i > 0 && !logs.isEmpty()) {
             try {
-                Pair<Long, String> pollLast = logs.pollFirst();
+                Pair<Long, String> pollLast = logs.pollLast();
                 if(pollLast!=null){
                     list.add(pollLast.getRight());
                 }

@@ -16,6 +16,11 @@ public class LogController extends AbstractController {
     }
     @Override
     public Response handle(Request request) {
+        if ("post".equalsIgnoreCase(request.getMethod())) {
+            String log = request.getRequestParam("log");
+            LogUtils.addLog(log);
+            return Response.success("ok");
+        }
         return Response.success(LogUtils.getLogs(20));
     }
 }

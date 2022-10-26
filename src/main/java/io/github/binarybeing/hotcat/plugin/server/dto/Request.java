@@ -6,6 +6,7 @@ import com.sun.net.httpserver.HttpExchange;
 import io.github.binarybeing.hotcat.plugin.utils.LogUtils;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -31,9 +32,10 @@ public class Request {
         try {
             byte[] bytes = exchange.getRequestBody().readAllBytes();
             String method = exchange.getRequestMethod();
+            URI requestURI = exchange.getRequestURI();
             String s = new String(bytes, StandardCharsets.UTF_8);
             JsonObject jsonObject = JsonParser.parseString(s).getAsJsonObject();
-            return new Request(exchange.getRequestURI().getPath(), method, jsonObject);
+            return new Request(requestURI.getPath(), method, jsonObject);
         } catch (IOException e) {
             LogUtils.addLog("request error: " + e.getMessage());
         }

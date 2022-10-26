@@ -2,6 +2,8 @@ package io.github.binarybeing.hotcat.plugin.action;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.Shortcut;
+import com.intellij.openapi.actionSystem.ShortcutSet;
 import io.github.binarybeing.hotcat.plugin.IdeaEventHandler;
 import io.github.binarybeing.hotcat.plugin.entity.PluginEntity;
 import org.jetbrains.annotations.NotNull;
@@ -27,4 +29,11 @@ public class HotCatSubPluginAction extends AnAction {
     public void actionPerformed(@NotNull AnActionEvent e) {
         handler.handle(plugin, e);
     }
+
+    @Override
+    protected void setShortcutSet(@NotNull ShortcutSet shortcutSet) {
+        super.setShortcutSet(shortcutSet);
+    }
+
+
 }

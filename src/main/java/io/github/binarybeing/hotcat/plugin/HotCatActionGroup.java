@@ -1,6 +1,7 @@
 package io.github.binarybeing.hotcat.plugin;
 
 import com.intellij.openapi.actionSystem.ActionGroup;
+import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.remoteServer.ServerType;
@@ -40,10 +41,18 @@ public class HotCatActionGroup extends ActionGroup {
         List<AnAction> list = new ArrayList<>();
         IdeaEventHandler handler = new InvokePythonPluginHandler();
         pluginEntities.forEach((plugin) -> {
-            list.add(new HotCatSubPluginAction(plugin, handler));
+            HotCatSubPluginAction pluginAction = new HotCatSubPluginAction(plugin, handler);
+            AnAction action = ActionManager.getInstance().getAction(plugin.getName());
+            if (action == null) {
+                ActionManager.getInstance().registerAction(plugin.getName(), pluginAction);
+            }
+            list.add(pluginAction);
         });
         list.add(new InstallPluginAction());
+        super.setSearchable(true);
+
         return list.toArray(new AnAction[0]);
+        //return null;
     }
 
     @Override

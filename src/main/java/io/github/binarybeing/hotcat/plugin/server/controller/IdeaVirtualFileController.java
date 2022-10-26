@@ -52,4 +52,8 @@ public class IdeaVirtualFileController extends AbstractController{
             return Response.success(result);
         });
     }
+
+    private void test(VirtualFile virtualFile) {
+
+    }
 }

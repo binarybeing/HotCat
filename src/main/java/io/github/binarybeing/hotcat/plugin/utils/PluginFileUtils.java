@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 public class PluginFileUtils {
     private static String CMD_HOME;
 
-    private static final String PLUGIN_DIR_NAME = "plugins";
+    private static final String PLUGIN_DIR_NAME = ".HotCatPlugins";
 
     public static String getCmdHome() {
         try {
@@ -39,7 +39,7 @@ public class PluginFileUtils {
                 path = URLDecoder.decode(path, StandardCharsets.UTF_8);
                 LogUtils.addLog("plugin.xml path: " + path);
                 File file = new File(path.replace("file:",""));
-                File parentFile = file.getParentFile().getParentFile().getParentFile().getParentFile();
+                File parentFile = file.getParentFile().getParentFile().getParentFile().getParentFile().getParentFile();
                 CMD_HOME = parentFile.getAbsolutePath();
             }
             return CMD_HOME;
