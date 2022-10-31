@@ -24,6 +24,15 @@ public class JsonUtils {
         }
         return null;
     }
+    public static JsonElement readJsonFile(File json) {
+        try {
+            String s = FileUtils.readFileToString(json, "UTF-8");
+            return JsonParser.parseString(s);
+        } catch (Exception e) {
+            LogUtils.addLog("json parse error: " + e.getMessage());
+        }
+        return null;
+    }
 
     public static String readJsonStringValue(JsonObject json, String key) {
         try {

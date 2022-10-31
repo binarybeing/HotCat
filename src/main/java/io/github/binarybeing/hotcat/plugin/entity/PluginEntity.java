@@ -1,6 +1,7 @@
 package io.github.binarybeing.hotcat.plugin.entity;
 
 import java.io.File;
+import java.util.List;
 
 /**
  * @author gn.binarybei
@@ -10,6 +11,8 @@ import java.io.File;
 public class PluginEntity {
     private String name;
     private File file;
+
+    private List<PluginEntity> subMenus;
 
     public String getName() {
         return name;
@@ -25,5 +28,13 @@ public class PluginEntity {
 
     public void setFile(File file) {
         this.file = file;
+    }
+
+    public List<PluginEntity> getSubMenus() {
+        return subMenus;
+    }
+
+    public void setSubMenus(List<PluginEntity> subMenus) {
+        this.subMenus = subMenus;
     }
 }

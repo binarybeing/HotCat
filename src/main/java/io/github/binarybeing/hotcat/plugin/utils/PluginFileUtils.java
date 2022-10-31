@@ -1,5 +1,8 @@
 package io.github.binarybeing.hotcat.plugin.utils;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.intellij.util.io.ZipUtil;
 import io.github.binarybeing.hotcat.plugin.entity.PluginEntity;
 import org.apache.commons.io.FileUtils;
@@ -54,7 +57,12 @@ public class PluginFileUtils {
     }
 
     public static List<PluginEntity> listPlugin(){
-        File file = new File(getPluginDirName());
+        return doListPlugins(getPluginDirName());
+    }
+
+
+    private static List<PluginEntity> doListPlugins(String dir){
+        File file = new File(dir);
         LogUtils.addLog("listPlugin from : " + file.getAbsolutePath());
         if (!file.exists() && !file.mkdir()) {
             LogUtils.addLog("listPlugin fail, plugin dir load fail : " + file.getAbsolutePath());
@@ -89,6 +97,7 @@ public class PluginFileUtils {
                     PluginEntity pluginEntity = new PluginEntity();
                     pluginEntity.setName(name);
                     pluginEntity.setFile(f);
+                    pluginEntity.setSubMenus(doListPlugins(f.getAbsolutePath()));
                     pluginEntities.add(pluginEntity);
                 }
             }

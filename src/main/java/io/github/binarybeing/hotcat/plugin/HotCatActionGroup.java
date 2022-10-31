@@ -11,11 +11,14 @@ import io.github.binarybeing.hotcat.plugin.entity.PluginEntity;
 import io.github.binarybeing.hotcat.plugin.handlers.InvokePythonPluginHandler;
 import io.github.binarybeing.hotcat.plugin.server.Server;
 import io.github.binarybeing.hotcat.plugin.utils.PluginFileUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author gn.binarybei
@@ -38,21 +41,44 @@ public class HotCatActionGroup extends ActionGroup {
     public AnAction @NotNull [] getChildren(@Nullable AnActionEvent e) {
         List<PluginEntity> pluginEntities = PluginFileUtils.listPlugin();
 
-        List<AnAction> list = new ArrayList<>();
         IdeaEventHandler handler = new InvokePythonPluginHandler();
-        pluginEntities.forEach((plugin) -> {
-            HotCatSubPluginAction pluginAction = new HotCatSubPluginAction(plugin, handler);
-            AnAction action = ActionManager.getInstance().getAction(plugin.getName());
-            if (action == null) {
-                ActionManager.getInstance().registerAction(plugin.getName(), pluginAction);
-            }
-            list.add(pluginAction);
-        });
+        List<AnAction> list = new ArrayList<>(getPlugins(pluginEntities, handler, "HotCat"));
         list.add(new InstallPluginAction());
         super.setSearchable(true);
-
         return list.toArray(new AnAction[0]);
         //return null;
+    }
+
+    private List<AnAction> getPlugins(List<PluginEntity> plugins, IdeaEventHandler handler, String groupName){
+        if (CollectionUtils.isEmpty(plugins)) {
+            return Collections.emptyList();
+        }
+        List<AnAction> res = new ArrayList<>();
+        for (PluginEntity plugin : plugins) {
+            if (CollectionUtils.isEmpty(plugin.getSubMenus())) {
+                HotCatSubPluginAction pluginAction = new HotCatSubPluginAction(plugin, handler);
+                AnAction action = ActionManager.getInstance().getAction(groupName+"/" + plugin.getName());
+                if (action == null) {
+                    ActionManager.getInstance().registerAction(groupName+"/" + plugin.getName(), pluginAction);
+                }
+                res.add(pluginAction);
+            } else {
+                List<PluginEntity> subMenus = plugin.getSubMenus();
+                List<AnAction> subActions = getPlugins(subMenus, handler, groupName + "/" + plugin.getName());
+                ActionGroup group = new ActionGroup(plugin.getName(), true){
+                    @Override
+                    public AnAction @NotNull [] getChildren(@Nullable AnActionEvent e) {
+                        return subActions.toArray(new AnAction[0]);
+                    }
+                };
+                AnAction action = ActionManager.getInstance().getAction(groupName+"/" + plugin.getName());
+                if (action == null) {
+                    ActionManager.getInstance().registerAction(groupName+"/" + plugin.getName(), group);
+                }
+                res.add(group);
+            }
+        }
+        return res;
     }
 
     @Override
