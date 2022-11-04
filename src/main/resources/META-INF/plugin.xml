@@ -33,6 +33,16 @@
     <em>HotCat</em>
   ]]></description>
 
+    <change-notes>
+        <![CDATA[
+            <h3>Version 1.3.3</h3>
+            <ul>
+                <li>add file chooser api</li>
+                <li>add a method to execute shell cmd in terminal and get output as result</li>
+            </ul>
+        ]]>
+    </change-notes>
+
     <!-- Product and plugin compatibility requirements.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
     <depends>com.intellij.modules.platform</depends>
