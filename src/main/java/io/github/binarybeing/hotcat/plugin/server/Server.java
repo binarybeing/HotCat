@@ -14,12 +14,15 @@ import org.apache.commons.lang3.tuple.Pair;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.InetSocketAddress;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * @author gn.binarybei
  * @date 2022/9/23
  * @note
  */
+@SuppressWarnings("AlibabaThreadPoolCreation")
 public class Server {
     public static final Server INSTANCE = new Server();
     private HttpServer httpServer;
@@ -27,12 +30,14 @@ public class Server {
 
     public void start() {
         ControllerContext.start();
+        ExecutorService threadPool = Executors.newFixedThreadPool(20);
         Pair<Integer, HttpServer> serverPair = doCreateServer(port);
         if (serverPair == null) {
             LogUtils.addLog("server start failed");
             return;
         }
         httpServer = serverPair.getRight();
+        httpServer.setExecutor(threadPool);
         port = serverPair.getLeft();
         httpServer.createContext("/api", exchange -> {
             AbstractController controller = ControllerContext.get(exchange.getRequestURI().getPath());
