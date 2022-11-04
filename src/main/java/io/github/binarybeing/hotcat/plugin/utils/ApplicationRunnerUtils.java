@@ -1,7 +1,13 @@
 package io.github.binarybeing.hotcat.plugin.utils;
 
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.vfs.VirtualFileManager;
+import com.intellij.psi.impl.file.impl.FileManager;
 
+import java.io.File;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Semaphore;
 

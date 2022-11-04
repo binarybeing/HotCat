@@ -94,6 +94,16 @@ public class IdeaTerminalController extends AbstractController {
                 throw e;
             }
         }
+
+        public List<String> startAndGetResult() throws Exception {
+            Project project = event.getProject();
+            try {
+                return TerminalUtils.doCommandWithOutput(project, tab, script, conditions);
+            } catch (Exception e) {
+                LogUtils.addLog("terminal error, " + e.getMessage());
+                throw e;
+            }
+        }
         public List<String> getOutPut() {
             return TerminalUtils.getTerminalOutPut();
         }

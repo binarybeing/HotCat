@@ -4,10 +4,19 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.fileChooser.FileChooser;
+import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
+import com.intellij.openapi.util.io.FileUtilRt;
+import com.intellij.openapi.vfs.LocalFileSystem;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.vfs.VirtualFileManager;
+import com.intellij.openapi.vfs.VirtualFileSystem;
+import com.intellij.openapi.vfs.newvfs.NewVirtualFileSystem;
+import com.intellij.util.Consumer;
 import io.github.binarybeing.hotcat.plugin.EventContext;
 import io.github.binarybeing.hotcat.plugin.server.dto.Request;
 import io.github.binarybeing.hotcat.plugin.server.dto.Response;
@@ -16,11 +25,13 @@ import io.github.binarybeing.hotcat.plugin.utils.DialogUtils;
 import io.github.binarybeing.hotcat.plugin.utils.JsonUtils;
 import org.apache.commons.jexl3.JexlExpression;
 import org.apache.commons.jexl3.MapContext;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -111,11 +122,39 @@ public class IdeaPanelController extends AbstractController {
                 DialogUtils.showMsg(title, info);
             }
         }
-
+        public String showFileChooserAndGet(String path, Integer type, String[] suffixes) {
+            VirtualFile file = null;
+            if (StringUtils.isNoneBlank(path)) {
+                file = LocalFileSystem.getInstance().refreshAndFindFileByPath(FileUtilRt.toSystemIndependentName(path));
+            }
+            final FileChooserDescriptor descriptor = new FileChooserDescriptor((type & 1) > 0, ((type >> 1)& 1) > 0,
+                    true, true,
+                    false, false);
+            if (ArrayUtils.isNotEmpty(suffixes)) {
+                descriptor.withFileFilter(f -> {
+                    for (String suffix : suffixes) {
+                        if (f.getName().endsWith(suffix)) {
+                            return true;
+                        }
+                    }
+                    return false;
+                });
+            }
+            Project project = event.getProject();
+            final VirtualFile fileToSelect = file;
+            return ApplicationRunnerUtils.run(()->{
+                VirtualFile virtualFile = FileChooser.chooseFile(descriptor, project, fileToSelect);
+                if (virtualFile == null) {
+                    return null;
+                }
+                return virtualFile.getPath();
+            });
+        }
 
         public IdeaPanel showForm(String label, Map<String, String> formInfo){
             return this;
         }
+
 
         public Map<String, String> showAndGet(){
             boolean ok = DialogUtils.showPanelDialog(event, title, jPanel);
