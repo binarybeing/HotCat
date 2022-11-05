@@ -3,16 +3,12 @@ package io.github.binarybeing.hotcat.plugin.server.controller;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.actionSystem.DataContext;
-import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
-import io.github.binarybeing.hotcat.plugin.EventContext;
 import io.github.binarybeing.hotcat.plugin.server.dto.Request;
 import io.github.binarybeing.hotcat.plugin.server.dto.Response;
 import io.github.binarybeing.hotcat.plugin.utils.ApplicationRunnerUtils;
-import io.github.binarybeing.hotcat.plugin.utils.JsonUtils;
 import org.apache.commons.jexl3.JexlExpression;
 import org.apache.commons.jexl3.MapContext;
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -20,24 +16,14 @@ import org.jetbrains.annotations.NotNull;
  * @date 2022/9/28
  * @note
  */
-public class IdeaProjectController extends AbstractController{
+public class IdeaProjectController extends BaseEventScriptController{
     @Override
     String path() {
         return "/api/idea/project";
     }
 
     @Override
-    public @NotNull Response handle(Request request) {
-        Long eventId = JsonUtils.readJsonLongValue(request.getJsonObject(), "eventId");
-        String script = JsonUtils.readJsonStringValue(request.getJsonObject(), "script");
-
-        AnActionEvent event = EventContext.getEvent(eventId);
-        if (event == null) {
-            return Response.error("event not found");
-        }
-        if (StringUtils.isEmpty(script)) {
-            return Response.error("script is empty");
-        }
+    protected @NotNull Response handle(Request request, AnActionEvent event, String script) {
 
         DataContext dataContext = event.getDataContext();
         Project project = CommonDataKeys.PROJECT.getData(dataContext);

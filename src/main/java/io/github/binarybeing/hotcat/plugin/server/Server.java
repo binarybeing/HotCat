@@ -7,8 +7,10 @@ import io.github.binarybeing.hotcat.plugin.server.controller.AbstractController;
 import io.github.binarybeing.hotcat.plugin.server.controller.ControllerContext;
 import io.github.binarybeing.hotcat.plugin.server.dto.Request;
 import io.github.binarybeing.hotcat.plugin.server.dto.Response;
+import io.github.binarybeing.hotcat.plugin.server.dto.StreamResponse;
 import io.github.binarybeing.hotcat.plugin.utils.JsonUtils;
 import io.github.binarybeing.hotcat.plugin.utils.LogUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.IOException;
@@ -16,6 +18,7 @@ import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author gn.binarybei
@@ -49,14 +52,15 @@ public class Server {
             Response response;
             try {
                 Request request = Request.formExchange(exchange);
-                Long eventId = JsonUtils.readJsonLongValue(request.getJsonObject(), "eventId");
-                String script = JsonUtils.readJsonStringValue(request.getJsonObject(), "script");
-                LogUtils.addLog("eventId: " + eventId + ", script: " + script);
-                response = controller.handle(request);
+                response = controller.handleRequest(request);
             } catch (Exception e) {
                 LogUtils.addLog(exchange.getRequestURI().getPath()+" error: " + e.getMessage());
                 response = Response.error(e.getMessage());
             }
+            if (response instanceof StreamResponse) {
+                streamResp((StreamResponse) response, exchange);
+            }
+
             resp(new Gson().toJson(response), exchange);
         });
         httpServer.start();
@@ -81,6 +85,29 @@ public class Server {
         exchange.getResponseHeaders().add("Content-Type", "text/json; charset=UTF-8");
         exchange.sendResponseHeaders(200, respContents.length);
         exchange.getResponseBody().write(respContents);
+        exchange.close();
+    }
+
+    private void streamResp(StreamResponse response, HttpExchange exchange) throws IOException{
+        exchange.getResponseHeaders().add("Content-Type", "text/plain; charset=UTF-8");
+        // set stream response
+        exchange.getResponseHeaders().add("Transfer-Encoding", "chunked");
+        exchange.sendResponseHeaders(200, 0);
+        while (!response.getIsEnd()) {
+            try {
+                String s = response.getQueue().poll(1, TimeUnit.SECONDS);
+                if (StringUtils.isNotBlank(s)) {
+                    byte[] respContents = s.getBytes("UTF-8");
+                    // 16进制长度
+                    exchange.getResponseBody().write(respContents);
+                    exchange.getResponseBody().write("\r\n".getBytes());
+                    exchange.getResponseBody().flush();
+                }
+            } catch (Exception e) {
+                LogUtils.addLog("streamResp error: " + e.getMessage());
+                response.end();
+            }
+        }
         exchange.close();
     }
 

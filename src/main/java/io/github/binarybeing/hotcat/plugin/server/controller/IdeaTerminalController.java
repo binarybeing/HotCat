@@ -2,15 +2,12 @@ package io.github.binarybeing.hotcat.plugin.server.controller;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
-import io.github.binarybeing.hotcat.plugin.EventContext;
 import io.github.binarybeing.hotcat.plugin.server.dto.Request;
 import io.github.binarybeing.hotcat.plugin.server.dto.Response;
-import io.github.binarybeing.hotcat.plugin.utils.JsonUtils;
 import io.github.binarybeing.hotcat.plugin.utils.LogUtils;
 import io.github.binarybeing.hotcat.plugin.utils.TerminalUtils;
 import org.apache.commons.jexl3.JexlExpression;
 import org.apache.commons.jexl3.MapContext;
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
@@ -22,23 +19,13 @@ import java.util.Map;
  * @date 2022/10/8
  * @note
  */
-public class IdeaTerminalController extends AbstractController {
+public class IdeaTerminalController extends BaseEventScriptController {
     @Override
     String path() {
         return "/api/idea/terminal";
     }
     @Override
-    public @NotNull Response handle(Request request) {
-        Long eventId = JsonUtils.readJsonLongValue(request.getJsonObject(), "eventId");
-        String script = JsonUtils.readJsonStringValue(request.getJsonObject(), "script");
-
-        AnActionEvent event = EventContext.getEvent(eventId);
-        if (event == null) {
-            return Response.error("event not found");
-        }
-        if (StringUtils.isEmpty(script)) {
-            return Response.error("script is empty");
-        }
+    protected @NotNull Response handle(Request request, AnActionEvent event, String script) {
         Terminal terminal = new Terminal(event);
         JexlExpression expression = super.jexlEngine.createExpression(script);
         MapContext context = new MapContext();

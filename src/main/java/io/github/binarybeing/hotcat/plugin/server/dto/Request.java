@@ -4,8 +4,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.sun.net.httpserver.HttpExchange;
 import io.github.binarybeing.hotcat.plugin.utils.LogUtils;
+import org.apache.commons.lang3.StringUtils;
 
-import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 
@@ -18,14 +18,17 @@ public class Request {
 
     private String uri;
 
+    private String urlQuery;
+
     private String method;
 
     private JsonObject jsonObject;
 
-    public Request(String uri, String method, JsonObject jsonObject) {
+    public Request(String uri, String urlQuery, String method, JsonObject jsonObject) {
         this.uri = uri;
         this.method = method;
         this.jsonObject = jsonObject;
+        this.urlQuery = urlQuery;
     }
 
     public static Request formExchange(HttpExchange exchange) {
@@ -33,13 +36,17 @@ public class Request {
             byte[] bytes = exchange.getRequestBody().readAllBytes();
             String method = exchange.getRequestMethod();
             URI requestURI = exchange.getRequestURI();
+            String query = requestURI.getQuery();
             String s = new String(bytes, StandardCharsets.UTF_8);
+            if (StringUtils.isBlank(s)) {
+                return new Request(requestURI.getPath(), query, method, new JsonObject());
+            }
             JsonObject jsonObject = JsonParser.parseString(s).getAsJsonObject();
-            return new Request(requestURI.getPath(), method, jsonObject);
-        } catch (IOException e) {
+            return new Request(requestURI.getPath(), query, method, jsonObject);
+        } catch (Exception e) {
             LogUtils.addLog("request error: " + e.getMessage());
         }
-        return new Request("", "get", new JsonObject());
+        return new Request("", "", "get", new JsonObject());
     }
 
     public String getUri() {
@@ -59,5 +66,19 @@ public class Request {
 
     public String getMethod() {
         return method;
+    }
+
+    public String getUrlQuery() {
+        return urlQuery;
+    }
+
+    @Override
+    public String toString() {
+        return "Request{" +
+                "uri='" + uri + '\'' +
+                ", urlQuery='" + urlQuery + '\'' +
+                ", method='" + method + '\'' +
+                ", jsonObject=" + jsonObject +
+                '}';
     }
 }

@@ -10,6 +10,9 @@ public class Response {
     private String msg;
     private Object data;
 
+    protected Response() {
+    }
+
     public Response(int code, String msg, Object data) {
         this.code = code;
         this.msg = msg;

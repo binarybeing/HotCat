@@ -6,23 +6,16 @@ import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileChooser.FileChooser;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
-import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.util.io.FileUtilRt;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.vfs.VirtualFileManager;
-import com.intellij.openapi.vfs.VirtualFileSystem;
-import com.intellij.openapi.vfs.newvfs.NewVirtualFileSystem;
-import com.intellij.util.Consumer;
-import io.github.binarybeing.hotcat.plugin.EventContext;
 import io.github.binarybeing.hotcat.plugin.server.dto.Request;
 import io.github.binarybeing.hotcat.plugin.server.dto.Response;
 import io.github.binarybeing.hotcat.plugin.utils.ApplicationRunnerUtils;
 import io.github.binarybeing.hotcat.plugin.utils.DialogUtils;
-import io.github.binarybeing.hotcat.plugin.utils.JsonUtils;
 import org.apache.commons.jexl3.JexlExpression;
 import org.apache.commons.jexl3.MapContext;
 import org.apache.commons.lang3.ArrayUtils;
@@ -31,7 +24,6 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -43,23 +35,13 @@ import java.util.concurrent.Semaphore;
  * @date 2022/9/29
  * @note
  */
-public class IdeaPanelController extends AbstractController {
+public class IdeaPanelController extends BaseEventScriptController {
     @Override
     String path() {
         return "/api/idea/panel";
     }
     @Override
-    public @NotNull Response handle(Request request) {
-        Long eventId = JsonUtils.readJsonLongValue(request.getJsonObject(), "eventId");
-        String script = JsonUtils.readJsonStringValue(request.getJsonObject(), "script");
-        AnActionEvent event = EventContext.getEvent(eventId);
-        if (event == null) {
-            return Response.error("event not found");
-        }
-        if (StringUtils.isEmpty(script)) {
-            return Response.error("script is empty");
-        }
-
+    protected @NotNull Response handle(Request request, AnActionEvent event, String script) {
         IdeaPanel panel = new IdeaPanel(event);
         JexlExpression expression = super.jexlEngine.createExpression(script);
         MapContext context = new MapContext();
@@ -155,8 +137,12 @@ public class IdeaPanelController extends AbstractController {
             return this;
         }
 
-
         public Map<String, String> showAndGet(){
+            return showAndGet(jPanel.getWidth());
+        }
+
+        public Map<String, String> showAndGet(int width){
+            jPanel.setSize(width, jPanel.getHeight());
             boolean ok = DialogUtils.showPanelDialog(event, title, jPanel);
             Map<String,String> inputInfo = new HashMap<>(4);
             if (ok) {

@@ -15,7 +15,16 @@ public abstract class AbstractController {
     protected JexlEngine jexlEngine = new JexlBuilder().create();
     abstract String path();
 
-    public abstract @NotNull Response handle(Request request);
+    public Response handleRequest(Request request){
+        return handle(request);
+    }
 
+    protected abstract @NotNull Response handle(Request request);
 
+    protected boolean checkEventId(){
+        return true;
+    }
+    protected boolean checkScript(){
+        return true;
+    }
 }

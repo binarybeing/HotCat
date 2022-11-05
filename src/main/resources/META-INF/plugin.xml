@@ -37,8 +37,10 @@
         <![CDATA[
             <h3>Version 1.3.3</h3>
             <ul>
-                <li>add file chooser api</li>
-                <li>add a method to execute shell cmd in terminal and get output as result</li>
+                <li>api added: file chooser api</li>
+                <li>api added: execute shell cmd in terminal and get output as result</li>
+                <li>api added: output log to stream http api '/api/log' </li>
+                <li>api added: get last cmd</li>
             </ul>
         ]]>
     </change-notes>

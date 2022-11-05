@@ -10,11 +10,9 @@ import com.intellij.openapi.util.UserDataHolderBase;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.Url;
 import com.intellij.util.Urls;
-import io.github.binarybeing.hotcat.plugin.EventContext;
 import io.github.binarybeing.hotcat.plugin.server.dto.Request;
 import io.github.binarybeing.hotcat.plugin.server.dto.Response;
 import io.github.binarybeing.hotcat.plugin.utils.ApplicationRunnerUtils;
-import io.github.binarybeing.hotcat.plugin.utils.JsonUtils;
 import org.apache.commons.jexl3.JexlExpression;
 import org.apache.commons.jexl3.MapContext;
 import org.apache.commons.lang3.StringUtils;
@@ -25,26 +23,14 @@ import org.jetbrains.annotations.NotNull;
  * @date 2022/10/13
  * @note
  */
-public class IdeaWebBrowserController extends AbstractController{
+public class IdeaWebBrowserController extends BaseEventScriptController{
     @Override
     String path() {
         return "/api/idea/web_browser";
     }
 
     @Override
-    public @NotNull Response handle(Request request) {
-
-
-        Long eventId = JsonUtils.readJsonLongValue(request.getJsonObject(), "eventId");
-        String script = JsonUtils.readJsonStringValue(request.getJsonObject(), "script");
-
-        AnActionEvent event = EventContext.getEvent(eventId);
-        if (event == null) {
-            return Response.error("event not found");
-        }
-        if (StringUtils.isEmpty(script)) {
-            return Response.error("script is empty");
-        }
+    protected @NotNull Response handle(Request request, AnActionEvent event, String script) {
         Project project = event.getProject();
         if (project == null || project.getProjectFile() == null) {
             return Response.error("project file is null");

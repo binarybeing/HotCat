@@ -16,18 +16,39 @@ import java.io.*;
  * @note
  */
 public class InvokePythonPluginHandler implements IdeaEventHandler {
+
+    private static String lastCmd = "";
+
+    public static String getLastCmd() {
+        return lastCmd;
+    }
+
     @Override
     public void handle(PluginEntity plugin, AnActionEvent event) {
         Long eventId = EventContext.registerEvent(event);
         String absolutePath = plugin.getFile().getAbsolutePath();
-
-        String cmd = "python3 " + absolutePath + " " + Server.INSTANCE.getPort() + " " + eventId + " " + absolutePath;
-        cmd = "\"" + cmd + "\"";
-        final String exeCmd = cmd.replaceAll(" ", "\" \"");
-
+        String cmd = "python3 '" + absolutePath + "' " + Server.INSTANCE.getPort() + " " + eventId + " '" + absolutePath+"'";
+        lastCmd = cmd;
         LogUtils.addLog("Runtime execute cmd: " + cmd);
         try {
-            Runtime.getRuntime().exec(new String[]{"python3", absolutePath, String.valueOf(Server.INSTANCE.getPort()), String.valueOf(eventId), absolutePath});
+            Process process = Runtime.getRuntime().exec(new String[]{"python3", absolutePath, String.valueOf(Server.INSTANCE.getPort()), String.valueOf(eventId), absolutePath});
+            process.onExit().thenAccept(p -> {
+                try {
+                    InputStream inputStream = p.getInputStream();
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        LogUtils.addLog(plugin.getName()+" output: "+ line);
+                    }
+                    InputStream errorStream = p.getErrorStream();
+                    BufferedReader errorReader = new BufferedReader(new InputStreamReader(errorStream));
+                    while ((line = errorReader.readLine()) != null) {
+                        LogUtils.addLog(plugin.getName()+" error info: "+ line);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
         } catch (Exception e) {
             LogUtils.addLog("Runtime execute cmd error: " + e.getMessage());
         }

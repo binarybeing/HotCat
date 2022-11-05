@@ -2,6 +2,7 @@ package io.github.binarybeing.hotcat.plugin.server.controller;
 
 import io.github.binarybeing.hotcat.plugin.server.dto.Request;
 import io.github.binarybeing.hotcat.plugin.server.dto.Response;
+import io.github.binarybeing.hotcat.plugin.server.dto.StreamResponse;
 import io.github.binarybeing.hotcat.plugin.utils.LogUtils;
 
 /**
@@ -14,13 +15,12 @@ public class LogController extends AbstractController {
     String path() {
         return "/api/log";
     }
+    @SuppressWarnings("AlibabaAvoidManuallyCreateThread")
     @Override
-    public Response handle(Request request) {
-        if ("post".equalsIgnoreCase(request.getMethod())) {
-            String log = request.getRequestParam("log");
-            LogUtils.addLog(log);
-            return Response.success("ok");
-        }
-        return Response.success(LogUtils.getLogs(20));
+    protected Response handle(Request request) {
+        StreamResponse response = new StreamResponse();
+        response.start();
+        return response;
+
     }
 }

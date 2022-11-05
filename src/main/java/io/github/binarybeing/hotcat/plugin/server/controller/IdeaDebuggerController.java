@@ -20,15 +20,12 @@ import com.intellij.remoteServer.configuration.RemoteServersManager;
 import com.intellij.remoteServer.impl.configuration.RemoteServerImpl;
 import com.intellij.remoteServer.runtime.deployment.debug.JavaDebugConnectionData;
 import com.intellij.remoteServer.runtime.deployment.debug.JavaDebuggerLauncher;
-import io.github.binarybeing.hotcat.plugin.EventContext;
 import io.github.binarybeing.hotcat.plugin.server.dto.Request;
 import io.github.binarybeing.hotcat.plugin.server.dto.Response;
-import io.github.binarybeing.hotcat.plugin.utils.JsonUtils;
 import io.github.binarybeing.hotcat.plugin.utils.LogUtils;
 import org.apache.commons.jexl3.JexlExpression;
 import org.apache.commons.jexl3.MapContext;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.Semaphore;
 
@@ -37,7 +34,7 @@ import java.util.concurrent.Semaphore;
  * @date 2022/9/28
  * @note
  */
-public class IdeaDebuggerController extends AbstractController{
+public class IdeaDebuggerController extends BaseEventScriptController{
 
     @Override
     String path() {
@@ -45,17 +42,7 @@ public class IdeaDebuggerController extends AbstractController{
     }
 
     @Override
-    public @NotNull Response handle(Request request) {
-        Long eventId = JsonUtils.readJsonLongValue(request.getJsonObject(), "eventId");
-        String script = JsonUtils.readJsonStringValue(request.getJsonObject(), "script");
-
-        AnActionEvent event = EventContext.getEvent(eventId);
-        if (event == null) {
-            return Response.error("event not found");
-        }
-        if (StringUtils.isEmpty(script)) {
-            return Response.error("script is empty");
-        }
+    protected Response handle(Request request, AnActionEvent event, String script) {
         Debugger debugger = new Debugger(event);
         JexlExpression expression = super.jexlEngine.createExpression(script);
         MapContext context = new MapContext();
