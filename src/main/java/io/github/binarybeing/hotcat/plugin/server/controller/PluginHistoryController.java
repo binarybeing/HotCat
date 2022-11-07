@@ -17,6 +17,6 @@ public class PluginHistoryController extends AbstractController {
 
     @Override
     protected Response handle(Request request) {
-        return Response.success(InvokePythonPluginHandler.getLastCmd());
+        return Response.success(InvokePythonPluginHandler.getHistoryCmds());
     }
 }

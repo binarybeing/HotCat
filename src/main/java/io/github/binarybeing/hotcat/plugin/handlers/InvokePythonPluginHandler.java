@@ -9,6 +9,10 @@ import io.github.binarybeing.hotcat.plugin.server.Server;
 import io.github.binarybeing.hotcat.plugin.utils.LogUtils;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 /**
  * @author gn.binarybei
@@ -17,10 +21,10 @@ import java.io.*;
  */
 public class InvokePythonPluginHandler implements IdeaEventHandler {
 
-    private static String lastCmd = "";
+    private static ConcurrentLinkedDeque<String> cmds = new ConcurrentLinkedDeque<>();
 
-    public static String getLastCmd() {
-        return lastCmd;
+    public static Collection<String> getHistoryCmds() {
+        return new ArrayList<>(cmds);
     }
 
     @Override
@@ -28,7 +32,10 @@ public class InvokePythonPluginHandler implements IdeaEventHandler {
         Long eventId = EventContext.registerEvent(event);
         String absolutePath = plugin.getFile().getAbsolutePath();
         String cmd = "python3 '" + absolutePath + "' " + Server.INSTANCE.getPort() + " " + eventId + " '" + absolutePath+"'";
-        lastCmd = cmd;
+        cmds.addFirst(cmd);
+        if (cmds.size() > 10) {
+            cmds.removeLast();
+        }
         LogUtils.addLog("Runtime execute cmd: " + cmd);
         try {
             Process process = Runtime.getRuntime().exec(new String[]{"python3", absolutePath, String.valueOf(Server.INSTANCE.getPort()), String.valueOf(eventId), absolutePath});
