@@ -128,23 +128,33 @@ public class PluginFileUtils {
                 boolean delete = tempDir.delete();
                 return null;
             }
-            File pluginFile = files[0];
-            File deployTargetFile = new File(pluginDirName + "/" + pluginFile.getName());
-            if (deployTargetFile.exists()) {
-                deleteDir(deployTargetFile);
+            File pluginFile = null;
+            for(File f: files){
+                if (!f.getName().endsWith("__MACOSX")) {
+                    pluginFile = f;
+                    break;
+                }
             }
-            boolean rename = pluginFile.renameTo(deployTargetFile);
-            if (!rename) {
-                LogUtils.addLog("unzip plugin fail, plugin dir rename fail : " + deployTargetFile.getAbsolutePath());
+            if (pluginFile == null) {
+                LogUtils.addLog("unzip plugin fail, plugin dir has no plugin : " + tempDir.getAbsolutePath());
                 tempDir.delete();
                 return null;
             }
-            if (!tempDir.delete()) {
-                LogUtils.addLog("unzip plugin success: " + file.getAbsolutePath());
+            LogUtils.addLog("move file from path: " + pluginFile.getAbsolutePath());
+            File deployTargetFile = new File(pluginDirName + "/" + pluginFile.getName());
+            try {
+                FileUtils.forceDelete(deployTargetFile);
+            } catch (Exception e) {
+                LogUtils.addLog("warn delete file error: " + deployTargetFile.getAbsolutePath());
+            }
+            try {
+                FileUtils.moveDirectoryToDirectory(pluginFile, new File(pluginDirName), true);
+            } catch (Exception e) {
+                LogUtils.addLog("warn move file error: " + pluginFile.getAbsolutePath());
                 return null;
             }
             LogUtils.addLog("unzip plugin success: " + file.getAbsolutePath());
-            return deployTargetFile;
+            return new File(pluginDirName + "/" + pluginFile.getName());
         } catch (Exception e) {
             LogUtils.addLog("unzip plugin fail: " + e.getMessage());
             return null;

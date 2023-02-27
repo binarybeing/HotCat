@@ -94,6 +94,8 @@ public class InstallPluginAction extends AnAction {
                         PluginFileUtils.deleteDir(pluginDir);
                         JOptionPane.showMessageDialog(null, "Install Plugin Failed: " + file.getName());
                     }
+                }else {
+                    JOptionPane.showMessageDialog(null, "Install Plugin Failed: " + file.getName()+ ", unzip file failed", "Error", JOptionPane.ERROR_MESSAGE);
                 }
             }
         });

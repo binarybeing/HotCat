@@ -10,7 +10,7 @@ dependencies {
 
 }
 group = "io.github.binarybeing.hotcat"
-version = "1.3.3"
+version = "1.3.5"
 
 repositories {
     mavenCentral()
@@ -22,7 +22,7 @@ intellij {
     version.set("2021.3")
     type.set("IU") //// Target IDE Platform
 
-    plugins.set(listOf("org.jetbrains.plugins.terminal"))
+    plugins.set(listOf("org.jetbrains.plugins.terminal","java", "org.intellij.plugins.markdown"))
 }
 
 tasks {
@@ -33,8 +33,8 @@ tasks {
     }
 
     patchPluginXml {
-        sinceBuild.set("211.0")
-        untilBuild.set("222.*")
+        sinceBuild.set("213.0")
+        untilBuild.set("223.*")
     }
 
     signPlugin {
