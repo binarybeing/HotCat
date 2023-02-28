@@ -1,13 +1,8 @@
 package io.github.binarybeing.hotcat.plugin.server.controller;
 
-import com.intellij.ide.actions.OpenFileAction;
-import com.intellij.ide.browsers.WebBrowserManager;
-import com.intellij.ide.browsers.actions.WebPreviewVirtualFile;
+import com.intellij.ide.browsers.BrowserLauncher;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.NlsSafe;
-import com.intellij.openapi.util.UserDataHolderBase;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.Url;
 import com.intellij.util.Urls;
 import io.github.binarybeing.hotcat.plugin.server.dto.Request;
@@ -15,7 +10,6 @@ import io.github.binarybeing.hotcat.plugin.server.dto.Response;
 import io.github.binarybeing.hotcat.plugin.utils.ApplicationRunnerUtils;
 import org.apache.commons.jexl3.JexlExpression;
 import org.apache.commons.jexl3.MapContext;
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -35,7 +29,7 @@ public class IdeaWebBrowserController extends BaseEventScriptController{
         if (project == null || project.getProjectFile() == null) {
             return Response.error("project file is null");
         }
-        WebBrowserManager manager = WebBrowserManager.getInstance();
+
         JexlExpression expression = super.jexlEngine.createExpression(script);
         MapContext context = new MapContext();
         context.set("webBrowser", new WebBrowser(project));
@@ -61,26 +55,9 @@ public class IdeaWebBrowserController extends BaseEventScriptController{
             return this;
         }
         public String start(){
-            WebPreviewVirtualFile file = new NatCatPreviewVirtualFile(project.getProjectFile(), tabName, url);
-            OpenFileAction.openFile(file, project);
+            BrowserLauncher.getInstance().open(url.toString());
             return "success";
         }
     }
-    public static class NatCatPreviewVirtualFile extends  WebPreviewVirtualFile {
-        private String tabName;
-        public NatCatPreviewVirtualFile(@NotNull VirtualFile virtualFile, String tabName, @NotNull Url url) {
-            super(virtualFile, url);
-            this.tabName = tabName;
-        }
 
-        @Override
-        public @NlsSafe @NotNull String getName() {
-            return StringUtils.isEmpty(tabName) ? "HotCat" : tabName;
-        }
-
-        @Override
-        public void copyUserDataTo(@NotNull UserDataHolderBase other) {
-            super.copyUserDataTo(other);
-        }
-    }
 }

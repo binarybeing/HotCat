@@ -4,21 +4,15 @@ package io.github.binarybeing.hotcat.plugin.utils;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.intellij.terminal.JBTerminalWidgetListener;
-import com.jediterm.terminal.*;
-import com.jediterm.terminal.model.CharBuffer;
+import com.jediterm.terminal.TtyConnector;
 import com.jediterm.terminal.model.LinesBuffer;
 import com.jediterm.terminal.model.TerminalTextBuffer;
-import com.jediterm.terminal.ui.TerminalPanelListener;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.plugins.terminal.AbstractTerminalRunner;
 import org.jetbrains.plugins.terminal.ShellTerminalWidget;
-import org.jetbrains.plugins.terminal.TerminalProcessOptions;
 import org.jetbrains.plugins.terminal.TerminalView;
 
-import java.io.*;
-import java.nio.charset.StandardCharsets;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
@@ -47,8 +41,7 @@ public class TerminalUtils {
         ShellTerminalWidget runningWidget = ApplicationRunnerUtils.run(() -> {
             AbstractTerminalRunner<?> runner = terminalView.getTerminalRunner();
             ShellTerminalWidget widget = terminalView.createLocalShellWidget(terminalName, terminalName, true);
-            //Process process = runner.createProcess(new TerminalProcessOptions(null, null, null), widget);
-            //widget.
+
 
             widget.addMessageFilter((s, i)->{
                 for (Map.Entry<String, String> entry : conditions.entrySet()) {

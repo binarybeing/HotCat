@@ -10,7 +10,7 @@ dependencies {
 
 }
 group = "io.github.binarybeing.hotcat"
-version = "1.3.5"
+version = "1.3.0"
 
 repositories {
     mavenCentral()
@@ -19,7 +19,7 @@ repositories {
 
 // Configure Gradle IntelliJ Plugin - read more: https://github.com/JetBrains/gradle-intellij-plugin
 intellij {
-    version.set("2021.3")
+    version.set("2020.3")
     type.set("IU") //// Target IDE Platform
 
     plugins.set(listOf("org.jetbrains.plugins.terminal","java", "org.intellij.plugins.markdown"))
@@ -33,8 +33,8 @@ tasks {
     }
 
     patchPluginXml {
-        sinceBuild.set("213.0")
-        untilBuild.set("223.*")
+        sinceBuild.set("203.0")
+        untilBuild.set("203.*")
     }
 
     signPlugin {
