@@ -24,7 +24,9 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -86,6 +88,7 @@ public class IdeaPanelController extends BaseEventScriptController {
             }
             return this;
         }
+
         public IdeaPanel showSelect(String label, String filed, String[] options, String defaultValue) {
             jPanel.add(new JLabel(label));
             ComboBox<String> box = new ComboBox<>(options);
@@ -97,6 +100,17 @@ public class IdeaPanelController extends BaseEventScriptController {
             return this;
         }
 
+        public IdeaPanel showCheck(String label, String[] optionArr) {
+            jPanel.add(new JLabel(label));
+            List<String> optionList = Arrays.asList(optionArr);
+            optionList.forEach(option -> {
+                JCheckBox jCheckBox = new JCheckBox(option);
+                jPanel.add(jCheckBox);
+                res.put(option, jCheckBox);
+            });
+            return this;
+        }
+
         public void showMsg(String title, String info, String type) {
             if ("error".equals(type)) {
                 DialogUtils.showError(title, info);
@@ -104,6 +118,7 @@ public class IdeaPanelController extends BaseEventScriptController {
                 DialogUtils.showMsg(title, info);
             }
         }
+
         public String showFileChooserAndGet(String path, Integer type, String[] suffixes) {
             VirtualFile file = null;
             if (StringUtils.isNoneBlank(path)) {
@@ -155,6 +170,9 @@ public class IdeaPanelController extends BaseEventScriptController {
                     } else if (component instanceof ComboBox) {
                         ComboBox<String> box = (ComboBox<String>) component;
                         inputInfo.put(field, box.getSelectedItem().toString());
+                    } else if (component instanceof JCheckBox) {
+                        JCheckBox checkbox = (JCheckBox) component;
+                        inputInfo.put(field, String.valueOf(checkbox.isSelected()));
                     }
                 }
             }else{
