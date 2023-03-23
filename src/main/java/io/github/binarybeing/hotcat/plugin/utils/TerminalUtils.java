@@ -1,27 +1,41 @@
 package io.github.binarybeing.hotcat.plugin.utils;
 
 
-import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.execution.configurations.GeneralCommandLine;
+import com.intellij.execution.impl.ConsoleViewUtil;
+import com.intellij.execution.process.*;
+import com.intellij.execution.ui.ConsoleViewContentType;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.intellij.terminal.JBTerminalWidgetListener;
-import com.jediterm.terminal.*;
-import com.jediterm.terminal.model.CharBuffer;
-import com.jediterm.terminal.model.LinesBuffer;
-import com.jediterm.terminal.model.TerminalTextBuffer;
-import com.jediterm.terminal.ui.TerminalPanelListener;
-import org.apache.commons.lang3.StringUtils;
+import com.intellij.openapi.util.Key;
+import com.intellij.openapi.wm.ToolWindow;
+import com.intellij.openapi.wm.ToolWindowManager;
+import com.intellij.terminal.JBTerminalWidget;
+import com.intellij.terminal.TerminalExecutionConsole;
+import com.intellij.ui.content.Content;
+import com.intellij.ui.content.ContentManager;
+import com.intellij.util.containers.IntObjectMap;
+import com.jediterm.terminal.TtyConnector;
+import com.jediterm.terminal.ui.JediTermWidget;
+import com.jediterm.terminal.ui.TerminalTabs;
+import com.jediterm.terminal.ui.TerminalTabsImpl;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.plugins.terminal.AbstractTerminalRunner;
-import org.jetbrains.plugins.terminal.ShellTerminalWidget;
-import org.jetbrains.plugins.terminal.TerminalProcessOptions;
+import org.jetbrains.plugins.terminal.JBTabbedTerminalWidget;
+import org.jetbrains.plugins.terminal.LocalTerminalDirectRunner;
 import org.jetbrains.plugins.terminal.TerminalView;
 
-import java.io.*;
+import java.awt.event.KeyEvent;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
+import java.util.stream.Collectors;
 
 /**
  * @author gn.binarybei
@@ -32,8 +46,6 @@ public class TerminalUtils {
 
     private static final Logger LOG = Logger.getInstance(TerminalUtils.class);
 
-    private static final Map<String, ShellTerminalWidget> widgetMap = new HashMap<>();
-
     private static final Queue<String> queue = new LinkedBlockingQueue<>();
 
     public static List<String> getTerminalOutPut(){
@@ -41,109 +53,29 @@ public class TerminalUtils {
         queue.clear();
         return list;
     }
+    private static void doExecuteCommand(@NotNull String shellCommand, @NotNull TtyConnector connector) throws IOException {
+        StringBuilder result = new StringBuilder();
+        result.append(shellCommand).append("\r\n");
+        connector.write(result.toString());
+    }
     public static List<String> doCommandWithOutput(Project project, String terminalName, String cmd, Map<String, String> conditions) throws IOException, InterruptedException {
-        TerminalView terminalView = TerminalView.getInstance(project);
-        final List<String> output = new ArrayList<>();
-        ShellTerminalWidget runningWidget = ApplicationRunnerUtils.run(() -> {
-            AbstractTerminalRunner<?> runner = terminalView.getTerminalRunner();
-            ShellTerminalWidget widget = terminalView.createLocalShellWidget(terminalName, terminalName, true);
-            //Process process = runner.createProcess(new TerminalProcessOptions(null, null, null), widget);
-            //widget.
-
-            widget.addMessageFilter((s, i)->{
-                for (Map.Entry<String, String> entry : conditions.entrySet()) {
-                    if (s.startsWith(entry.getKey())) {
-                        try {
-                            widget.executeCommand(entry.getValue());
-                        } catch (Exception e) {
-                            LOG.error(e);
-                        }
-                    }
-                }
-                return null;
-            });
-            try {
-                widget.executeCommand(cmd);
-                return widget;
-            } catch (Exception e) {
-                LogUtils.addLog("executeCommand error " + cmd + " " + e.getMessage());
-                return null;
-            }
-        });
-        if (runningWidget == null) {
+        ToolWindowManager toolWindowManager = ToolWindowManager.getInstance(project);
+        ToolWindow toolWindow = toolWindowManager.getToolWindow("Terminal");
+        if(toolWindow == null){
+            DialogUtils.showError("Terminal not found", "the terminal tool window not found");
             return Collections.emptyList();
         }
-        TtyConnector connector = runningWidget.getTtyConnector();
-        while (connector == null) {
-            connector = runningWidget.getTtyConnector();
-            Thread.sleep(500L);
+        try {
+            return ApplicationRunnerUtils.run(()->{
+                String scirpt = String.format("tell application \"Terminal\" to do script \"%s\"  in window 1", cmd);
+                Runtime.getRuntime().exec(new String[]{"osascript", "-e", "tell application \"Terminal\" to activate",
+                        "-e", scirpt});
+                return Collections.emptyList();
+            });
+        }catch (Exception e){
+            DialogUtils.showError("Terminal execute error", e.getMessage());
+            return Collections.emptyList();
         }
-        while (runningWidget.hasRunningCommands()) {
-            Thread.sleep(100L);
-        }
-        TerminalTextBuffer textBuffer = runningWidget.getTerminalTextBuffer();
-        LinesBuffer historyBuffer = textBuffer.getHistoryBuffer();
-        for (int i = 0; i < historyBuffer.getLineCount(); i++) {
-            String s = historyBuffer.getLineText(i);
-            if (StringUtils.isNotBlank(s)) {
-                output.add(s.replaceAll("\\ue000", ""));
-            }
-        }
-        for(int i = 0; i < textBuffer.getScreenLinesCount(); i++) {
-            String s = textBuffer.getLine(i).getText();
-            if (StringUtils.isNotBlank(s)) {
-                output.add(s.replaceAll("\\ue000", ""));
-            }
-        }
-        return output;
-
-    }
-
-    public static String doCommand(Project project, String terminalName, String cmd, Map<String, String> conditions) throws IOException, InterruptedException {
-        TerminalView terminalView = TerminalView.getInstance(project);
-        Semaphore semaphore = new Semaphore(0);
-        String[] res = new String[]{""};
-        queue.clear();
-        ApplicationManager.getApplication().invokeLater(()->{
-            try {
-                ShellTerminalWidget widget = widgetMap.remove(terminalName);
-                if (widget != null) {
-                    widget.dispose();
-                }
-                ShellTerminalWidget shWidget = terminalView.createLocalShellWidget(terminalName, terminalName);
-                widgetMap.put(terminalName, shWidget);
-                StringBuilder sb = new StringBuilder();
-                shWidget.addMessageFilter((s, i) -> {
-                    LOG.info("widgetSecond new line =" + s);
-                    //以回车结尾
-                    queue.offer(s);
-                    for (Map.Entry<String, String> entry : conditions.entrySet()) {
-                        if (s.startsWith(entry.getKey())) {
-                            LOG.info("widgetSecond new line =" + s);
-                            try {
-                                shWidget.executeCommand(entry.getValue());
-                            } catch (Exception e) {
-                                LogUtils.addLog("executeCommand error " + entry.getValue() + " " + e.getMessage());
-                            }
-                        }
-
-                    }
-                    return null;
-                });
-
-                try {
-                    shWidget.executeCommand(cmd);
-
-                    res[0] = sb.toString();
-                } catch (Exception e) {
-                    LogUtils.addLog("executeCommand error " + cmd + " " + e.getMessage());
-                }
-            }finally {
-                semaphore.release();
-            }
-        });
-        acquire(semaphore);
-        return res[0];
     }
 
     private static void acquire(Semaphore semaphore) {

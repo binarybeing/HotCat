@@ -1,6 +1,5 @@
 plugins {
-    id("java")
-    id("org.jetbrains.intellij") version "1.5.2"
+    id("org.jetbrains.intellij") version "1.0"
 }
 dependencies {
     //gson
@@ -10,7 +9,7 @@ dependencies {
 
 }
 group = "io.github.binarybeing.hotcat"
-version = "1.3.5"
+version = "1.3.5.181"
 
 repositories {
     mavenCentral()
@@ -19,22 +18,22 @@ repositories {
 
 // Configure Gradle IntelliJ Plugin - read more: https://github.com/JetBrains/gradle-intellij-plugin
 intellij {
-    version.set("2021.3")
-    type.set("IU") //// Target IDE Platform
+    version.set("2018.1")
+    type.set("IC") //// Target IDE Platform
 
-    plugins.set(listOf("org.jetbrains.plugins.terminal","java", "org.intellij.plugins.markdown"))
+    plugins.set(listOf("org.jetbrains.plugins.terminal"))
 }
 
 tasks {
     // Set the JVM compatibility versions
     withType<JavaCompile> {
-        sourceCompatibility = "11"
-        targetCompatibility = "11"
+        sourceCompatibility = "8"
+        targetCompatibility = "8"
     }
 
     patchPluginXml {
-        sinceBuild.set("213.0")
-        untilBuild.set("223.*")
+        sinceBuild.set("181.0")
+        untilBuild.set("193.*")
     }
 
     signPlugin {
@@ -48,3 +47,4 @@ tasks {
     }
 
 }
+

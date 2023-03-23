@@ -5,8 +5,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 
@@ -53,6 +51,20 @@ public class LogUtils {
     }
     public static void addLog(String log){
         logs.add(Pair.of(System.currentTimeMillis(), log));
+        if(logs.size()>1000){
+            try {
+                logs.pollFirst();
+            } catch (Exception e) {}
+        }
+    }
+    public static void addError(Exception exp, String log){
+        logs.add(Pair.of(System.currentTimeMillis(), log+" : "+exp.getMessage()));
+        int i = 0;
+        StackTraceElement[] traceElements = exp.getStackTrace();
+        while(i<20 && i<traceElements.length){
+            logs.add(Pair.of(System.currentTimeMillis(), traceElements[i].toString()));
+            i++;
+        }
         if(logs.size()>1000){
             try {
                 logs.pollFirst();

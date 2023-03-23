@@ -19,7 +19,7 @@ public class ControllerContext {
     }
 
     public static void start() {
-        Reflections reflections = new Reflections(AbstractController.class.getPackageName());
+        Reflections reflections = new Reflections(AbstractController.class.getPackage().getName());
         reflections.getSubTypesOf(AbstractController.class).forEach((clazz) -> {
             try {
                 AbstractController controller = clazz.newInstance();

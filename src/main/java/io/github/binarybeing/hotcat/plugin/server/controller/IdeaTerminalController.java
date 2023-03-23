@@ -73,11 +73,11 @@ public class IdeaTerminalController extends BaseEventScriptController {
         }
 
         public String start() throws Exception{
-            Project project = event.getProject();
             try {
-                return TerminalUtils.doCommand(project, tab, script, conditions);
+                Project project = event.getProject();
+                return TerminalUtils.doCommandWithOutput(project, tab, script, conditions).toString();
             } catch (Exception e) {
-                LogUtils.addLog("terminal error, " + e.getMessage());
+                LogUtils.addError(e, "terminal error");
                 throw e;
             }
         }

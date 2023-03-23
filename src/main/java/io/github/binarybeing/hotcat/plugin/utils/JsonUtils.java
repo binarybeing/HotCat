@@ -17,7 +17,7 @@ public class JsonUtils {
     public static String readJsonFileStringValue(File json, String key) {
         try {
             String s = FileUtils.readFileToString(json, "UTF-8");
-            JsonElement element = JsonParser.parseString(s);
+            JsonElement element =  new JsonParser().parse(s);
             return element.getAsJsonObject().get(key).getAsString();
         } catch (Exception e) {
             LogUtils.addLog("json parse error: " + e.getMessage());
@@ -27,7 +27,7 @@ public class JsonUtils {
     public static JsonElement readJsonFile(File json) {
         try {
             String s = FileUtils.readFileToString(json, "UTF-8");
-            return JsonParser.parseString(s);
+            return new JsonParser().parse(s);
         } catch (Exception e) {
             LogUtils.addLog("json parse error: " + e.getMessage());
         }

@@ -33,15 +33,16 @@ public class Request {
 
     public static Request formExchange(HttpExchange exchange) {
         try {
-            byte[] bytes = exchange.getRequestBody().readAllBytes();
+            byte[] bytes = new byte[2048];
+            int len = exchange.getRequestBody().read(bytes);
             String method = exchange.getRequestMethod();
             URI requestURI = exchange.getRequestURI();
             String query = requestURI.getQuery();
-            String s = new String(bytes, StandardCharsets.UTF_8);
+            String s = new String(bytes,0, len, StandardCharsets.UTF_8);
             if (StringUtils.isBlank(s)) {
                 return new Request(requestURI.getPath(), query, method, new JsonObject());
             }
-            JsonObject jsonObject = JsonParser.parseString(s).getAsJsonObject();
+            JsonObject jsonObject = new JsonParser().parse(s).getAsJsonObject();
             return new Request(requestURI.getPath(), query, method, jsonObject);
         } catch (Exception e) {
             LogUtils.addLog("request error: " + e.getMessage());

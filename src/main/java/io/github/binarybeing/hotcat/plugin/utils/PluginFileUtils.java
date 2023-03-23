@@ -1,8 +1,5 @@
 package io.github.binarybeing.hotcat.plugin.utils;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import com.intellij.util.io.ZipUtil;
 import io.github.binarybeing.hotcat.plugin.entity.PluginEntity;
 import org.apache.commons.io.FileUtils;
@@ -13,7 +10,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -39,7 +35,7 @@ public class PluginFileUtils {
                     return "";
                 }
                 String path = url.getPath();
-                path = URLDecoder.decode(path, StandardCharsets.UTF_8);
+                path = URLDecoder.decode(path, StandardCharsets.UTF_8.name());
                 LogUtils.addLog("plugin.xml path: " + path);
                 File file = new File(path.replace("file:",""));
                 File parentFile = file.getParentFile().getParentFile().getParentFile().getParentFile().getParentFile();
@@ -121,7 +117,8 @@ public class PluginFileUtils {
                 return null;
             }
             File tempDir = new File(pluginHome, "temp");
-            ZipUtil.extract(Path.of(file.toURI()), Path.of(tempDir.toURI()), null, true);
+
+            ZipUtil.extract(file, tempDir, null, true);
             File[] files = tempDir.listFiles();
             if (files == null || files.length == 0) {
                 LogUtils.addLog("unzip plugin fail, plugin dir has no file : " + tempDir.getAbsolutePath());

@@ -1,9 +1,6 @@
 package io.github.binarybeing.hotcat.plugin.server.controller;
 
-import com.intellij.execution.ExecutionException;
-import com.intellij.execution.Executor;
-import com.intellij.execution.RunManager;
-import com.intellij.execution.RunnerAndConfigurationSettings;
+import com.intellij.execution.*;
 import com.intellij.execution.configurations.ConfigurationFactory;
 import com.intellij.execution.configurations.ConfigurationType;
 import com.intellij.execution.configurations.ConfigurationTypeBase;
@@ -91,50 +88,51 @@ public class IdeaDebuggerController extends BaseEventScriptController{
         }
 
         public String start() throws Exception{
-            Project project = event.getProject();
-            if (project == null) {
-                throw new RuntimeException("project is null");
-            }
-            RunManager runManager = RunManager.getInstance(project);
-
-            Executor executor = DefaultDebugExecutor.getDebugExecutorInstance();
-
-            ProgramRunner<?> runner = ProgramRunner.findRunnerById(executor.getId());
-            if (runner == null) {
-                throw new RuntimeException("runner is null");
-            }
-            ConfigurationType debugType = null;
-            for (ConfigurationType type : ConfigurationTypeBase.CONFIGURATION_TYPE_EP.getExtensionList()) {
-                if ("Remote JVM Debug".equals(type.getDisplayName())) {
-                    debugType = type;
-                    break;
-                }
-            }
-            if (debugType == null) {
-                throw new RuntimeException("debugType is null");
-            }
-            ConfigurationFactory factory = debugType.getConfigurationFactories()[0];
-            String debugName = StringUtils.isEmpty(desc) ? "debug" : desc;
-            RunnerAndConfigurationSettings setting = runManager.createConfiguration(debugName, factory);
-
-            RunConfiguration configuration = setting.getConfiguration();
-            ExecutionEnvironment executionEnvironment = new ExecutionEnvironmentBuilder(project, executor).runProfile(configuration).build();
-            RemoteServer<?> remoteServer = null;
-            RemoteServersManager remoteServersManager = RemoteServersManager.getInstance();
-            //ProgramRunnerUtil.executeConfiguration(executionEnvironment, true, true);
-
-            for (RemoteServer<?> server : remoteServersManager.getServers()) {
-                if (server instanceof RemoteServerImpl) {
-                    remoteServer = server;
-                }
-            }
-            if (remoteServer == null) {
-                //startDebugSession 实际不会用到
-                remoteServer = new RemoteServerImpl<>("", null, null);
-            }
-            final RemoteServer<?> server = remoteServer;
-
             try {
+                Project project = event.getProject();
+                if (project == null) {
+                    throw new RuntimeException("project is null");
+                }
+                RunManager runManager = RunManager.getInstance(project);
+                ConfigurationType debugType = null;
+                for (ConfigurationType type : ConfigurationTypeBase.CONFIGURATION_TYPE_EP.getExtensions()) {
+                    LogUtils.addLog("ConfigurationType List: " + type.getDisplayName());
+                    if ("Remote JVM Debug".equals(type.getDisplayName())
+                     || "Remote".equals(type.getDisplayName())) {
+                        debugType = type;
+                        break;
+                    }
+                }
+                if (debugType == null) {
+                    throw new RuntimeException("debugType is null");
+                }
+                ConfigurationFactory factory = debugType.getConfigurationFactories()[0];
+                String debugName = StringUtils.isEmpty(desc) ? "debug" : desc;
+                RunnerAndConfigurationSettings setting = runManager.createConfiguration(debugName, factory);
+
+                Executor executor = DefaultDebugExecutor.getDebugExecutorInstance();
+                ProgramRunner<?> runner = ProgramRunnerUtil.getRunner(executor.getId(), setting);
+                if (runner == null) {
+                    throw new RuntimeException("runner is null");
+                }
+
+                RunConfiguration configuration = setting.getConfiguration();
+                ExecutionEnvironment executionEnvironment = new ExecutionEnvironmentBuilder(project, executor).runProfile(configuration).build();
+                RemoteServer<?> remoteServer = null;
+                RemoteServersManager remoteServersManager = RemoteServersManager.getInstance();
+                //ProgramRunnerUtil.executeConfiguration(executionEnvironment, true, true);
+
+                for (RemoteServer<?> server : remoteServersManager.getServers()) {
+                    if (server instanceof RemoteServerImpl) {
+                        remoteServer = server;
+                    }
+                }
+                if (remoteServer == null) {
+                    //startDebugSession 实际不会用到
+                    remoteServer = new RemoteServerImpl<>("", null, null);
+                }
+                final RemoteServer<?> server = remoteServer;
+
                 JavaDebugConnectionData data = new JavaDebugConnectionData(getHost(), getPort());
                 Semaphore semaphore = new Semaphore(0);
                 ApplicationManager.getApplication().invokeLater(()->{
@@ -149,7 +147,7 @@ public class IdeaDebuggerController extends BaseEventScriptController{
                 semaphore.acquire(1);
                 return "debugger started";
             } catch (Exception e) {
-                LogUtils.addLog("create debugger error " + e.getMessage());
+                LogUtils.addError(e, "create debugger error ");
                 throw e;
             }
         }

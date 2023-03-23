@@ -1,6 +1,5 @@
 package io.github.binarybeing.hotcat.plugin.utils;
 
-import org.apache.commons.httpclient.methods.PostMethod;
 
 /**
  * @author gn.binarybei

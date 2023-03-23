@@ -4,21 +4,22 @@ import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.remoteServer.ServerType;
 import io.github.binarybeing.hotcat.plugin.action.HotCatSubPluginAction;
 import io.github.binarybeing.hotcat.plugin.action.InstallPluginAction;
 import io.github.binarybeing.hotcat.plugin.entity.PluginEntity;
 import io.github.binarybeing.hotcat.plugin.handlers.InvokePythonPluginHandler;
 import io.github.binarybeing.hotcat.plugin.server.Server;
+import io.github.binarybeing.hotcat.plugin.utils.DialogUtils;
 import io.github.binarybeing.hotcat.plugin.utils.PluginFileUtils;
-import org.apache.commons.collections.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * @author gn.binarybei
@@ -35,27 +36,29 @@ public class HotCatActionGroup extends ActionGroup {
         } catch (Exception e) {
             server = null;
         }
+        setShellRunner();
     }
 
     @Override
-    public AnAction @NotNull [] getChildren(@Nullable AnActionEvent e) {
+    @NotNull
+    public AnAction [] getChildren(@Nullable AnActionEvent e) {
         List<PluginEntity> pluginEntities = PluginFileUtils.listPlugin();
 
         IdeaEventHandler handler = new InvokePythonPluginHandler();
         List<AnAction> list = new ArrayList<>(getPlugins(pluginEntities, handler, "HotCat"));
         list.add(new InstallPluginAction());
-        super.setSearchable(true);
         return list.toArray(new AnAction[0]);
         //return null;
     }
 
     private List<AnAction> getPlugins(List<PluginEntity> plugins, IdeaEventHandler handler, String groupName){
-        if (CollectionUtils.isEmpty(plugins)) {
+        if (plugins == null || plugins.isEmpty()) {
+
             return Collections.emptyList();
         }
         List<AnAction> res = new ArrayList<>();
         for (PluginEntity plugin : plugins) {
-            if (CollectionUtils.isEmpty(plugin.getSubMenus())) {
+            if (plugin.getSubMenus() == null || plugin.getSubMenus().isEmpty()) {
                 HotCatSubPluginAction pluginAction = new HotCatSubPluginAction(plugin, handler);
                 AnAction action = ActionManager.getInstance().getAction(groupName+"/" + plugin.getName());
                 if (action == null) {
@@ -67,7 +70,8 @@ public class HotCatActionGroup extends ActionGroup {
                 List<AnAction> subActions = getPlugins(subMenus, handler, groupName + "/" + plugin.getName());
                 ActionGroup group = new ActionGroup(plugin.getName(), true){
                     @Override
-                    public AnAction @NotNull [] getChildren(@Nullable AnActionEvent e) {
+                    @NotNull
+                    public AnAction[] getChildren(@Nullable AnActionEvent e) {
                         return subActions.toArray(new AnAction[0]);
                     }
                 };
@@ -84,5 +88,26 @@ public class HotCatActionGroup extends ActionGroup {
     @Override
     public void update(@NotNull AnActionEvent e) {
         e.getPresentation().setEnabled(server != null);
+    }
+
+    private static void setShellRunner(){
+        String cpFileName = PluginFileUtils.getPluginDirName()+"/shell_runner.sh";
+        File file = new File(cpFileName);
+        if (file.exists()) {
+            file.delete();
+        }
+        try (InputStream stream = HotCatActionGroup.class.getClassLoader().getResourceAsStream("shell_runner.sh");
+             FileOutputStream fileOutputStream = new FileOutputStream(cpFileName)) {
+            assert stream != null;
+            byte[] bytes = new byte[1024];
+            int len;
+            while ((len = stream.read(bytes)) != -1) {
+                fileOutputStream.write(bytes, 0, len);
+                fileOutputStream.flush();
+            }
+            Runtime.getRuntime().exec("chmod +x '" + cpFileName+"'");
+        } catch (Exception e) {
+            DialogUtils.showError("init ShellRunner error", e.getMessage());
+        }
     }
 }
