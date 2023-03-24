@@ -2,6 +2,7 @@ package io.github.binarybeing.hotcat.plugin.server.controller;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import io.github.binarybeing.hotcat.plugin.EventContext;
+import io.github.binarybeing.hotcat.plugin.server.ServerException;
 import io.github.binarybeing.hotcat.plugin.server.dto.Request;
 import io.github.binarybeing.hotcat.plugin.server.dto.Response;
 import io.github.binarybeing.hotcat.plugin.utils.JsonUtils;
@@ -36,7 +37,7 @@ public abstract class BaseEventScriptController extends AbstractController{
             return handle(request, event, script);
         } catch (Exception e) {
             LogUtils.addEventLogs(eventId,"handleRequest error: " + e);
-            return Response.error(e.getMessage());
+            return Response.error(ServerException.of(e, "handleRequest error").getMessage());
         }
     }
     protected abstract Response handle(Request request, AnActionEvent event, String script);
