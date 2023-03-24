@@ -10,7 +10,7 @@ dependencies {
 
 }
 group = "io.github.binarybeing.hotcat"
-version = "1.3.2"
+version = "1.3.5.210"
 
 repositories {
     mavenCentral()

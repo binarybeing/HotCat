@@ -4,17 +4,21 @@ import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.remoteServer.ServerType;
 import io.github.binarybeing.hotcat.plugin.action.HotCatSubPluginAction;
 import io.github.binarybeing.hotcat.plugin.action.InstallPluginAction;
 import io.github.binarybeing.hotcat.plugin.entity.PluginEntity;
 import io.github.binarybeing.hotcat.plugin.handlers.InvokePythonPluginHandler;
 import io.github.binarybeing.hotcat.plugin.server.Server;
+import io.github.binarybeing.hotcat.plugin.utils.DialogUtils;
+import io.github.binarybeing.hotcat.plugin.utils.LogUtils;
 import io.github.binarybeing.hotcat.plugin.utils.PluginFileUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -27,6 +31,7 @@ import java.util.stream.Collectors;
  */
 public class HotCatActionGroup extends ActionGroup {
     private static Server server;
+    private static boolean setShellRunner = false;
 
     static {
         try {
@@ -35,6 +40,10 @@ public class HotCatActionGroup extends ActionGroup {
         } catch (Exception e) {
             server = null;
         }
+    }
+
+    public HotCatActionGroup() {
+        //setShellRunner();
     }
 
     @Override
@@ -50,6 +59,7 @@ public class HotCatActionGroup extends ActionGroup {
     }
 
     private List<AnAction> getPlugins(List<PluginEntity> plugins, IdeaEventHandler handler, String groupName){
+        LogUtils.addLog("setShellRunner: " + (setShellRunner || setShellRunner()));
         if (CollectionUtils.isEmpty(plugins)) {
             return Collections.emptyList();
         }
@@ -84,5 +94,27 @@ public class HotCatActionGroup extends ActionGroup {
     @Override
     public void update(@NotNull AnActionEvent e) {
         e.getPresentation().setEnabled(server != null);
+    }
+
+    private static boolean setShellRunner(){
+        String cpFileName = PluginFileUtils.getPluginDirName()+"/shell_runner.sh";
+        File file = new File(cpFileName);
+        if (file.exists()) {
+            file.delete();
+        }
+        try (InputStream stream = HotCatActionGroup.class.getClassLoader().getResourceAsStream("shell_runner.sh");
+             FileOutputStream fileOutputStream = new FileOutputStream(cpFileName)) {
+            assert stream != null;
+            byte[] bytes = new byte[1024];
+            int len;
+            while ((len = stream.read(bytes)) != -1) {
+                fileOutputStream.write(bytes, 0, len);
+                fileOutputStream.flush();
+            }
+            return setShellRunner = true;
+        } catch (Exception e) {
+            DialogUtils.showError("init ShellRunner error", e.getMessage());
+            return false;
+        }
     }
 }
