@@ -14,7 +14,6 @@ import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import io.github.binarybeing.hotcat.plugin.server.dto.Request;
 import io.github.binarybeing.hotcat.plugin.server.dto.Response;
-import io.github.binarybeing.hotcat.plugin.utils.ApplicationRunnerUtils;
 import io.github.binarybeing.hotcat.plugin.utils.DialogUtils;
 import org.apache.commons.jexl3.JexlExpression;
 import org.apache.commons.jexl3.MapContext;
@@ -24,11 +23,8 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 
@@ -139,13 +135,11 @@ public class IdeaPanelController extends BaseEventScriptController {
             }
             Project project = event.getProject();
             final VirtualFile fileToSelect = file;
-            return ApplicationRunnerUtils.run(()->{
-                VirtualFile virtualFile = FileChooser.chooseFile(descriptor, project, fileToSelect);
-                if (virtualFile == null) {
-                    return null;
-                }
-                return virtualFile.getPath();
-            });
+            VirtualFile virtualFile = FileChooser.chooseFile(descriptor, project, fileToSelect);
+            if (virtualFile == null) {
+                return null;
+            }
+            return virtualFile.getPath();
         }
 
         public IdeaPanel showForm(String label, Map<String, String> formInfo){

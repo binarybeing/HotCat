@@ -32,6 +32,8 @@ public class HotCatActionGroup extends ActionGroup {
     private static Server server;
     private static boolean setShellRunner = false;
 
+
+
     static {
         try {
             server = Server.INSTANCE;
@@ -42,7 +44,8 @@ public class HotCatActionGroup extends ActionGroup {
     }
 
     public HotCatActionGroup() {
-        //setShellRunner();
+
+
     }
 
     @Override

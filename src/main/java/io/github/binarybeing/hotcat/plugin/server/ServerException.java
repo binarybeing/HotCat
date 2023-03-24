@@ -26,7 +26,7 @@ public class ServerException extends Exception{
         for (StackTraceElement traceElement : traceElements) {
             builder.append("\tat ").append(traceElement).append("\n");
         }
-        return this.e.getMessage() + "\n" + builder;
+        return this.e.getMessage()+ "\n" + this.e.getCause() + "\n" + builder;
     }
 
     @Override

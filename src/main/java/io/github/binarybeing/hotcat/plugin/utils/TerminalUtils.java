@@ -44,32 +44,7 @@ public class TerminalUtils {
     public static List<String> doCommandWithOutput(Project project, String terminalName, String cmd, Map<String, String> conditions) throws IOException, InterruptedException {
         TerminalView terminalView = TerminalView.getInstance(project);
         final List<String> output = new ArrayList<>();
-        ShellTerminalWidget runningWidget = ApplicationRunnerUtils.run(() -> {
-            AbstractTerminalRunner<?> runner = terminalView.getTerminalRunner();
-            ShellTerminalWidget widget = terminalView.createLocalShellWidget(terminalName, terminalName, true);
-            //Process process = runner.createProcess(new TerminalProcessOptions(null, null, null), widget);
-            //widget.
-
-            widget.addMessageFilter((s, i)->{
-                for (Map.Entry<String, String> entry : conditions.entrySet()) {
-                    if (s.startsWith(entry.getKey())) {
-                        try {
-                            widget.executeCommand(entry.getValue());
-                        } catch (Exception e) {
-                            LOG.error(e);
-                        }
-                    }
-                }
-                return null;
-            });
-            try {
-                widget.executeCommand(cmd);
-                return widget;
-            } catch (Exception e) {
-                LogUtils.addLog("executeCommand error " + cmd + " " + e.getMessage());
-                return null;
-            }
-        });
+        ShellTerminalWidget runningWidget = getShellTerminalWidget(terminalView, terminalName, cmd, conditions);
         if (runningWidget == null) {
             return Collections.emptyList();
         }
@@ -97,6 +72,33 @@ public class TerminalUtils {
         }
         return output;
 
+    }
+
+    private static ShellTerminalWidget getShellTerminalWidget(TerminalView terminalView, String terminalName, String cmd, Map<String, String> conditions){
+        AbstractTerminalRunner<?> runner = terminalView.getTerminalRunner();
+        ShellTerminalWidget widget = terminalView.createLocalShellWidget(terminalName, terminalName, true);
+        //Process process = runner.createProcess(new TerminalProcessOptions(null, null, null), widget);
+        //widget.
+
+        widget.addMessageFilter((s, i)->{
+            for (Map.Entry<String, String> entry : conditions.entrySet()) {
+                if (s.startsWith(entry.getKey())) {
+                    try {
+                        widget.executeCommand(entry.getValue());
+                    } catch (Exception e) {
+                        LOG.error(e);
+                    }
+                }
+            }
+            return null;
+        });
+        try {
+            widget.executeCommand(cmd);
+            return widget;
+        } catch (Exception e) {
+            LogUtils.addLog("executeCommand error " + cmd + " " + e.getMessage());
+            return null;
+        }
     }
 
     public static String doCommand(Project project, String terminalName, String cmd, Map<String, String> conditions) throws IOException, InterruptedException {

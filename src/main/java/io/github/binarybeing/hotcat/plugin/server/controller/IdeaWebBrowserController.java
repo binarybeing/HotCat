@@ -12,7 +12,6 @@ import com.intellij.util.Url;
 import com.intellij.util.Urls;
 import io.github.binarybeing.hotcat.plugin.server.dto.Request;
 import io.github.binarybeing.hotcat.plugin.server.dto.Response;
-import io.github.binarybeing.hotcat.plugin.utils.ApplicationRunnerUtils;
 import org.apache.commons.jexl3.JexlExpression;
 import org.apache.commons.jexl3.MapContext;
 import org.apache.commons.lang3.StringUtils;
@@ -39,10 +38,8 @@ public class IdeaWebBrowserController extends BaseEventScriptController{
         JexlExpression expression = super.jexlEngine.createExpression(script);
         MapContext context = new MapContext();
         context.set("webBrowser", new WebBrowser(project));
-        return ApplicationRunnerUtils.run(() -> {
-            Object result = expression.evaluate(context);
-            return Response.success(result);
-        });
+        Object result = expression.evaluate(context);
+        return Response.success(result);
     }
     public static class WebBrowser{
         private final Project project;
