@@ -9,7 +9,7 @@ dependencies {
 
 }
 group = "io.github.binarybeing.hotcat"
-version = "1.3.5.181"
+version = "1.3.5.181212"
 
 repositories {
     mavenCentral()
@@ -33,7 +33,7 @@ tasks {
 
     patchPluginXml {
         sinceBuild.set("181.0")
-        untilBuild.set("193.*")
+        untilBuild.set("212.*")
     }
 
     signPlugin {
