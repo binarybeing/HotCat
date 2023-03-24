@@ -105,7 +105,8 @@ public class IdeaDebuggerController extends BaseEventScriptController{
             }
             ConfigurationType debugType = null;
             for (ConfigurationType type : ConfigurationTypeBase.CONFIGURATION_TYPE_EP.getExtensionList()) {
-                if ("Remote JVM Debug".equals(type.getDisplayName())) {
+                if ("Remote JVM Debug".equals(type.getDisplayName())
+                     || "Remote".equals(type.getDisplayName())) {
                     debugType = type;
                     break;
                 }
@@ -149,7 +150,7 @@ public class IdeaDebuggerController extends BaseEventScriptController{
                 semaphore.acquire(1);
                 return "debugger started";
             } catch (Exception e) {
-                LogUtils.addLog("create debugger error " + e.getMessage());
+                LogUtils.addError(e, "create debugger error ");
                 throw e;
             }
         }
