@@ -59,6 +59,20 @@ public class LogUtils {
             } catch (Exception e) {}
         }
     }
+    public static void addError(Exception exp, String log){
+        logs.add(Pair.of(System.currentTimeMillis(), log+" : "+exp.getMessage()));
+        int i = 0;
+        StackTraceElement[] traceElements = exp.getStackTrace();
+        while(i<20 && i<traceElements.length){
+            logs.add(Pair.of(System.currentTimeMillis(), traceElements[i].toString()));
+            i++;
+        }
+        if(logs.size()>1000){
+            try {
+                logs.pollFirst();
+            } catch (Exception e) {}
+        }
+    }
 
     public static String[] getLogs(int i) {
         List<String> list = new ArrayList<>();
