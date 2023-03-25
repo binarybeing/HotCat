@@ -6,7 +6,6 @@ import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.vfs.VirtualFile;
 import io.github.binarybeing.hotcat.plugin.server.dto.Request;
 import io.github.binarybeing.hotcat.plugin.server.dto.Response;
-import io.github.binarybeing.hotcat.plugin.utils.ApplicationRunnerUtils;
 import org.apache.commons.jexl3.JexlExpression;
 import org.apache.commons.jexl3.MapContext;
 import org.jetbrains.annotations.NotNull;
@@ -33,10 +32,8 @@ public class IdeaVirtualFileController extends BaseEventScriptController{
         JexlExpression expression = super.jexlEngine.createExpression(script);
         MapContext context = new MapContext();
         context.set("virtualFile", virtualFile);
-        return ApplicationRunnerUtils.run(() -> {
-            Object result = expression.evaluate(context);
-            return Response.success(result);
-        });
+        Object result = expression.evaluate(context);
+        return Response.success(result);
     }
 
     private void test(VirtualFile virtualFile) {

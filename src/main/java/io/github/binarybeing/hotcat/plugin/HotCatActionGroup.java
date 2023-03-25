@@ -10,6 +10,7 @@ import io.github.binarybeing.hotcat.plugin.entity.PluginEntity;
 import io.github.binarybeing.hotcat.plugin.handlers.InvokePythonPluginHandler;
 import io.github.binarybeing.hotcat.plugin.server.Server;
 import io.github.binarybeing.hotcat.plugin.utils.DialogUtils;
+import io.github.binarybeing.hotcat.plugin.utils.LogUtils;
 import io.github.binarybeing.hotcat.plugin.utils.PluginFileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -28,6 +29,9 @@ import java.util.List;
  */
 public class HotCatActionGroup extends ActionGroup {
     private static Server server;
+    private static boolean setShellRunner = false;
+
+
 
     static {
         try {
@@ -36,7 +40,11 @@ public class HotCatActionGroup extends ActionGroup {
         } catch (Exception e) {
             server = null;
         }
-        setShellRunner();
+    }
+
+    public HotCatActionGroup() {
+
+
     }
 
     @Override
@@ -52,6 +60,7 @@ public class HotCatActionGroup extends ActionGroup {
     }
 
     private List<AnAction> getPlugins(List<PluginEntity> plugins, IdeaEventHandler handler, String groupName){
+        LogUtils.addLog("setShellRunner: " + (setShellRunner || setShellRunner()));
         if (plugins == null || plugins.isEmpty()) {
 
             return Collections.emptyList();
@@ -90,7 +99,7 @@ public class HotCatActionGroup extends ActionGroup {
         e.getPresentation().setEnabled(server != null);
     }
 
-    private static void setShellRunner(){
+    private static boolean setShellRunner(){
         String cpFileName = PluginFileUtils.getPluginDirName()+"/shell_runner.sh";
         File file = new File(cpFileName);
         if (file.exists()) {
@@ -105,9 +114,10 @@ public class HotCatActionGroup extends ActionGroup {
                 fileOutputStream.write(bytes, 0, len);
                 fileOutputStream.flush();
             }
-            Runtime.getRuntime().exec("chmod +x '" + cpFileName+"'");
+            return setShellRunner = true;
         } catch (Exception e) {
             DialogUtils.showError("init ShellRunner error", e.getMessage());
+            return false;
         }
     }
 }

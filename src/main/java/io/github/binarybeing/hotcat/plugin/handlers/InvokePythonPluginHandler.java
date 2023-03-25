@@ -38,7 +38,7 @@ public class InvokePythonPluginHandler implements IdeaEventHandler {
     public void handle(PluginEntity plugin, AnActionEvent event) {
         Long eventId = EventContext.registerEvent(event);
         String absolutePath = plugin.getFile().getAbsolutePath();
-        String cmd = "python3 '" + absolutePath + "' " + Server.INSTANCE.getPort() + " " + eventId + " '" + absolutePath;
+        String cmd = "python3 '" + absolutePath + "' " + Server.INSTANCE.getPort() + " " + eventId + " '" + absolutePath+"'";
         cmds.addFirst(cmd);
         if (cmds.size() > 200) {
             cmds.removeLast();

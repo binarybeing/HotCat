@@ -1,10 +1,13 @@
 package io.github.binarybeing.hotcat.plugin;
 
+import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.util.ActionCallback;
+import io.github.binarybeing.hotcat.plugin.action.EmptyAction;
+import io.github.binarybeing.hotcat.plugin.utils.ApplicationRunnerUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
@@ -26,14 +29,21 @@ public class EventContext {
         }
         return eventId;
     }
+    public static boolean hasEvent(){
+        return eventQueue.size() > 0;
+    }
 
     public static AnActionEvent getEvent(Long id){
         if (id == 999999999L) {
-            Pair<Long, AnActionEvent> longAnActionEventPair = eventQueue.peekLast();
-            if (longAnActionEventPair != null) {
-                return longAnActionEventPair.getRight();
+            ApplicationRunnerUtils.run(() ->{
+                EmptyAction emptyAction = new EmptyAction();
+                ActionCallback callback = ActionManager.getInstance().tryToExecute(emptyAction, null, null, null, true);
+                callback.wait();
+                return emptyAction.getEvent();
+            });
+            if(eventQueue.size() > 0){
+                return eventQueue.getLast().getRight();
             }
-            return null;
         }
 
         if (eventQueue.size() == 0) {

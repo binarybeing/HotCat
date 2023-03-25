@@ -88,6 +88,7 @@ public class IdeaPanelController extends BaseEventScriptController {
             }
             return this;
         }
+
         public IdeaPanel showSelect(String label, String filed, String[] options, String defaultValue) {
             jPanel.add(new JLabel(label));
             ComboBox<String> box = new ComboBox<>(options);
@@ -138,13 +139,11 @@ public class IdeaPanelController extends BaseEventScriptController {
             }
             Project project = event.getProject();
             final VirtualFile fileToSelect = file;
-            return ApplicationRunnerUtils.run(()->{
-                VirtualFile virtualFile = FileChooser.chooseFile(descriptor, project, fileToSelect);
-                if (virtualFile == null) {
-                    return null;
-                }
-                return virtualFile.getPath();
-            });
+            VirtualFile virtualFile = FileChooser.chooseFile(descriptor, project, fileToSelect);
+            if (virtualFile == null) {
+                return null;
+            }
+            return virtualFile.getPath();
         }
 
         public IdeaPanel showForm(String label, Map<String, String> formInfo){
