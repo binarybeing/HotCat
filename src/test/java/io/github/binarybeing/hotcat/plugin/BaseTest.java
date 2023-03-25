@@ -18,8 +18,8 @@ import java.util.Map;
  * @date 2023/3/24
  * @note
  */
-public class BaseTest {
-    private int port = 17123;
+public abstract class BaseTest {
+    private int port = 17122;
 
     protected Class<?>  getTestClass(){
         throw new RuntimeException("please override this method");
@@ -28,6 +28,10 @@ public class BaseTest {
     @Test
     public void test() throws Exception{
         Class<?> aClass = getTestClass();
+        if(aClass == null){
+            System.out.println("skip test class, set env test.open=true to open");
+            return;
+        }
         String classPath = aClass.getName().replace(".", "/") + ".class";
         InputStream stream = this.getClass().getClassLoader().getResourceAsStream(classPath);
         byte[] bytecode = stream.readAllBytes();

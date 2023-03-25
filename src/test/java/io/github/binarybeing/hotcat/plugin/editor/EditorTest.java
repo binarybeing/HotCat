@@ -1,7 +1,6 @@
 package io.github.binarybeing.hotcat.plugin.editor;
 
 import io.github.binarybeing.hotcat.plugin.BaseTest;
-import org.junit.Test;
 
 /**
  * @author gn.binarybei
@@ -12,6 +11,7 @@ public class EditorTest extends BaseTest {
 
     //@Override
     protected Class<?> getTestClass() {
-        return Editor.class;
+        String s = System.getenv("test.open");
+        return "true".equals(s) ? Editor.class : null;
     }
 }

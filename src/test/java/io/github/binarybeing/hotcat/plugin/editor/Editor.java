@@ -31,6 +31,9 @@ public class Editor {
         if (virtualFile == null) {
             return "project not found";
         }
-        return editor.getSelectionModel().getSelectedText().toUpperCase(Locale.ROOT);
+
+        editor.getSelectionModel().setSelection(0, 1000);
+        return "success";
+        //return editor.getSelectionModel().getSelectedText().toUpperCase(Locale.ROOT);
     }
 }
