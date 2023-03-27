@@ -134,17 +134,7 @@ public class IdeaDebuggerController extends BaseEventScriptController{
                 final RemoteServer<?> server = remoteServer;
 
                 JavaDebugConnectionData data = new JavaDebugConnectionData(getHost(), getPort());
-                Semaphore semaphore = new Semaphore(0);
-                ApplicationManager.getApplication().invokeLater(()->{
-                    try {
-                        JavaDebuggerLauncher.getInstance().startDebugSession(data, executionEnvironment , server);
-                    } catch (ExecutionException e) {
-                        LogUtils.addLog(e.getMessage());
-                    }finally {
-                        semaphore.release(1);
-                    }
-                });
-                semaphore.acquire(1);
+                JavaDebuggerLauncher.getInstance().startDebugSession(data, executionEnvironment , server);
                 return "debugger started";
             } catch (Exception e) {
                 LogUtils.addError(e, "create debugger error ");

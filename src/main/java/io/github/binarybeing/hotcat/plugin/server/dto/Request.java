@@ -1,13 +1,17 @@
 package io.github.binarybeing.hotcat.plugin.server.dto;
 
+import com.google.common.primitives.Bytes;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.sun.net.httpserver.HttpExchange;
 import io.github.binarybeing.hotcat.plugin.utils.LogUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 /**
  * @author gn.binarybei
@@ -33,12 +37,20 @@ public class Request {
 
     public static Request formExchange(HttpExchange exchange) {
         try {
-            byte[] bytes = new byte[2048];
-            int len = exchange.getRequestBody().read(bytes);
+            InputStream stream = exchange.getRequestBody();
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            byte[] bytes = new byte[1024];
+            int len;
+            while ((len = stream.read(bytes)) != -1) {
+                outputStream.write(bytes, 0, len);
+            }
+            outputStream.close();
+            bytes = outputStream.toByteArray();
+
             String method = exchange.getRequestMethod();
             URI requestURI = exchange.getRequestURI();
             String query = requestURI.getQuery();
-            String s = new String(bytes,0, len, StandardCharsets.UTF_8);
+            String s = new String(bytes, StandardCharsets.UTF_8);
             if (StringUtils.isBlank(s)) {
                 return new Request(requestURI.getPath(), query, method, new JsonObject());
             }

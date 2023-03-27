@@ -6,7 +6,10 @@ import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileChooser.FileChooser;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
+import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.progress.Task;
+import com.intellij.openapi.progress.impl.BackgroundableProcessIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.util.io.FileUtilRt;
@@ -14,7 +17,6 @@ import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import io.github.binarybeing.hotcat.plugin.server.dto.Request;
 import io.github.binarybeing.hotcat.plugin.server.dto.Response;
-import io.github.binarybeing.hotcat.plugin.utils.ApplicationRunnerUtils;
 import io.github.binarybeing.hotcat.plugin.utils.DialogUtils;
 import org.apache.commons.jexl3.JexlExpression;
 import org.apache.commons.jexl3.MapContext;
@@ -24,11 +26,8 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 
@@ -186,11 +185,12 @@ public class IdeaPanelController extends BaseEventScriptController {
                 throw new RuntimeException("project is null");
             }
             String processId = UUID.randomUUID().toString();
-            ApplicationManager.getApplication().invokeLater(()->{
-                ProgressManager.getInstance().runProcessWithProgressSynchronously(new ProcessingRunnable(processId), title, false, project);
-            });
+            ProcessingRunnable processingRunnable = new ProcessingRunnable(project, title, processId);
+            BackgroundableProcessIndicator indicator = new BackgroundableProcessIndicator(processingRunnable);
+            ProgressManager.getInstance().runProcessWithProgressAsynchronously(processingRunnable, indicator);
             return processId;
         }
+
         public String closeProcessing(String processId){
             DataContext dataContext = event.getDataContext();
             Project project = CommonDataKeys.PROJECT.getData(dataContext);
@@ -199,43 +199,42 @@ public class IdeaPanelController extends BaseEventScriptController {
             }
             ProcessingRunnable runnable = ProcessingRunnable.PROCESS_MAP.get(processId);
             if (runnable != null) {
-                runnable.stop = true;
-                runnable.waits();
+                runnable.release();
             }
             return processId;
         }
     }
-    private static class ProcessingRunnable implements Runnable{
+    private static class ProcessingRunnable extends Task.Backgroundable implements Runnable {
         private static final Map<String, ProcessingRunnable> PROCESS_MAP = new ConcurrentHashMap<>();
-
-        private String processId;
-
-        private boolean stop = false;
 
         private Semaphore semaphore = new Semaphore(0);
 
-        public ProcessingRunnable(String processId) {
-            this.processId = processId;
+
+        public ProcessingRunnable(Project project, String title,String processId) {
+            super(project, title);
             PROCESS_MAP.put(processId, this);
         }
 
         @Override
         public void run() {
-            while (!stop){
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-            semaphore.release(1);
-        }
-        public void waits(){
             try {
                 semaphore.acquire(1);
             } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+                e.printStackTrace();
             }
+        }
+
+        @Override
+        public void run(@NotNull ProgressIndicator progressIndicator) {
+            try {
+                semaphore.acquire(1);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        public void release(){
+            semaphore.release(100);
         }
     }
 }

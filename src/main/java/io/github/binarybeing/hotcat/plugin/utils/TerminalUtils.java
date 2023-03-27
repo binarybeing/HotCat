@@ -42,12 +42,9 @@ public class TerminalUtils {
             return Collections.emptyList();
         }
         try {
-            return ApplicationRunnerUtils.run(()->{
-                String scirpt = String.format("tell application \"Terminal\" to do script \"%s\"  in window 1", cmd);
-                Runtime.getRuntime().exec(new String[]{"osascript", "-e", "tell application \"Terminal\" to activate",
-                        "-e", scirpt});
-                return Collections.emptyList();
-            });
+            String script = String.format("tell application \"Terminal\" to do script \"%s\" ", cmd);
+            Runtime.getRuntime().exec(new String[]{"osascript", "-e", script});
+            return Collections.emptyList();
         }catch (Exception e){
             DialogUtils.showError("Terminal execute error", e.getMessage());
             return Collections.emptyList();

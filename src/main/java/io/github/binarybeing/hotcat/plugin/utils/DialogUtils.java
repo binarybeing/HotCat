@@ -37,132 +37,83 @@ public class DialogUtils extends DialogWrapper {
 
 
     public static String showInputDialog(AnActionEvent event, String title, String label) {
-        Semaphore semaphore = new Semaphore(0);
-        final String[] s = new String[]{""};
-        ApplicationManager.getApplication().invokeLater(()->{
-            try {
-                JPanel panel = new JPanel();
-                JLabel jLabel = new JLabel(label);
-                panel.add(jLabel);
-                JTextField field = new JTextField();
-                panel.add(field);
-                DialogUtils dialogUtils = new DialogUtils(event.getProject(), title, panel);
-                dialogUtils.setOKButtonText("确认");
-                dialogUtils.setCancelButtonText("取消");
-                boolean b = dialogUtils.showAndGet();
-                if (b) {
-                    s[0] = field.getText();
-                }
-
-            }finally {
-                semaphore.release();
-            }
-        });
-        acquire(semaphore);
-        return s[0];
+        JPanel panel = new JPanel();
+        JLabel jLabel = new JLabel(label);
+        panel.add(jLabel);
+        JTextField field = new JTextField();
+        panel.add(field);
+        DialogUtils dialogUtils = new DialogUtils(event.getProject(), title, panel);
+        dialogUtils.setOKButtonText("确认");
+        dialogUtils.setCancelButtonText("取消");
+        boolean b = dialogUtils.showAndGet();
+        if (b) {
+            return field.getText();
+        }
+        return "";
     }
 
     public static void showFormDialog(AnActionEvent event, String title, Map<String, String> fromInfo, Consumer<Map<String, String>> inputConsumer) {
-        Semaphore semaphore = new Semaphore(0);
-        ApplicationManager.getApplication().invokeLater(()->{
-            try {
-                JPanel panel = new JPanel();
-                Map<String, JTextField> input = new HashMap<>();
-                for (Map.Entry<String, String> entry : fromInfo.entrySet()) {
-                    panel.add(new JLabel(entry.getValue()));
-                    JTextField field = new JTextField();
-                    input.put(entry.getKey(), field);
-                }
-                DialogUtils dialogUtils = new DialogUtils(event.getProject(), title, panel);
+        JPanel panel = new JPanel();
+        Map<String, JTextField> input = new HashMap<>();
+        for (Map.Entry<String, String> entry : fromInfo.entrySet()) {
+            panel.add(new JLabel(entry.getValue()));
+            JTextField field = new JTextField();
+            input.put(entry.getKey(), field);
+        }
+        DialogUtils dialogUtils = new DialogUtils(event.getProject(), title, panel);
 
-                dialogUtils.setOKButtonText("确认");
-                dialogUtils.setCancelButtonText("取消");
-                if (dialogUtils.showAndGet()) {
-                    Map<String, String> map = new HashMap<>();
-                    for (Map.Entry<String, JTextField> entry : input.entrySet()) {
-                        map.put(entry.getKey(), entry.getValue().getText());
-                    }
-                    inputConsumer.accept(map);
-                }
-            }finally {
-                semaphore.release();
+        dialogUtils.setOKButtonText("确认");
+        dialogUtils.setCancelButtonText("取消");
+        if (dialogUtils.showAndGet()) {
+            Map<String, String> map = new HashMap<>();
+            for (Map.Entry<String, JTextField> entry : input.entrySet()) {
+                map.put(entry.getKey(), entry.getValue().getText());
             }
-        });
-        acquire(semaphore);
+            inputConsumer.accept(map);
+        }
     }
 
     public static void showChooseFileDialog(AnActionEvent event, String title, Consumer<File> consumer) {
-        Semaphore semaphore = new Semaphore(0);
-        ApplicationManager.getApplication().invokeLater(()->{
-            try {
-                JFileChooser fileChooser = new JFileChooser();
-                fileChooser.setName("choose file");
-                //show dialog
-                fileChooser.showOpenDialog(null);
-                fileChooser.addActionListener(e -> {
-                    LogUtils.addLog("action"+ e.getActionCommand());
-                });
-                JPanel panel = new JPanel();
-                panel.add(fileChooser);
-
-                DialogUtils dialogUtils = new DialogUtils(event.getProject(), title, panel);
-                //choose file
-                dialogUtils.setOKButtonText("确认");
-                dialogUtils.setCancelButtonText("取消");
-                boolean b = dialogUtils.showAndGet();
-                if (b) {
-                    consumer.accept(fileChooser.getSelectedFile());
-                }
-            }finally {
-                semaphore.release(1);
-            }
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setName("choose file");
+        //show dialog
+        fileChooser.showOpenDialog(null);
+        fileChooser.addActionListener(e -> {
+            LogUtils.addLog("action"+ e.getActionCommand());
         });
-        acquire(semaphore);
+        JPanel panel = new JPanel();
+        panel.add(fileChooser);
+
+        DialogUtils dialogUtils = new DialogUtils(event.getProject(), title, panel);
+        //choose file
+        dialogUtils.setOKButtonText("确认");
+        dialogUtils.setCancelButtonText("取消");
+        boolean b = dialogUtils.showAndGet();
+        if (b) {
+            consumer.accept(fileChooser.getSelectedFile());
+        }
     }
 
 
 
     public static boolean showConfirmDialog(AnActionEvent event, String title, String message) {
-        Semaphore semaphore = new Semaphore(0);
-        final boolean[] b = new boolean[]{false};
-        ApplicationManager.getApplication().invokeLater(()->{
-            try {
-                JPanel panel = new JPanel();
-                JLabel field = new JLabel(message);
-                panel.add(field);
-                DialogUtils dialogUtils = new DialogUtils(event.getProject(), title, panel);
+        JPanel panel = new JPanel();
+        JLabel field = new JLabel(message);
+        panel.add(field);
+        DialogUtils dialogUtils = new DialogUtils(event.getProject(), title, panel);
 
-                dialogUtils.setOKButtonText("确认");
-                dialogUtils.setCancelButtonText("取消");
-                boolean res = dialogUtils.showAndGet();
-                b[0] = res;
-            }finally {
-                semaphore.release(1);
-            }
-        });
-        acquire(semaphore);
-        return b[0];
-
+        dialogUtils.setOKButtonText("确认");
+        dialogUtils.setCancelButtonText("取消");
+        return dialogUtils.showAndGet();
 
     }
 
     public static boolean showPanelDialog(AnActionEvent event, String title, JPanel jPanel) {
-        final boolean[] b = new boolean[]{false};
-        Semaphore semaphore = new Semaphore(0);
-        ApplicationManager.getApplication().invokeLater(()->{
-            try {
-                DialogUtils dialogUtils = new DialogUtils(event.getProject(), title, jPanel);
-                dialogUtils.createCenterPanel();
-                dialogUtils.setOKButtonText("确认");
-                dialogUtils.setCancelButtonText("取消");
-                boolean res = dialogUtils.showAndGet();
-                b[0] = res;
-            }finally {
-                semaphore.release(1);
-            }
-        });
-        acquire(semaphore);
-        return b[0];
+        DialogUtils dialogUtils = new DialogUtils(event.getProject(), title, jPanel);
+        dialogUtils.createCenterPanel();
+        dialogUtils.setOKButtonText("确认");
+        dialogUtils.setCancelButtonText("取消");
+        return dialogUtils.showAndGet();
     }
 
     @Override
@@ -170,11 +121,5 @@ public class DialogUtils extends DialogWrapper {
         return jPanel;
     }
 
-    private static void acquire(Semaphore semaphore) {
-        try {
-            semaphore.acquire(1);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
+
 }
