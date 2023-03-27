@@ -68,36 +68,34 @@ public class ExUrlOpenerProvider implements  MarkdownBrowserPreviewExtension.Pro
                 check(split);
                 JavaPsiFacade javaPsiFacade = JavaPsiFacade.getInstance(project);
                 FileEditorManager fileEditorManager = FileEditorManager.getInstance(project);
-                ApplicationManager.getApplication().invokeLater(()->{
-                    if(fileEditorManager == null ){
-                        Messages.showErrorDialog("FileEditorManager not found", "Error");
-                        return;
-                    }
-                    if(panel.getVirtualFile()==null){
-                        Messages.showErrorDialog("Panel has no file", "Error");
-                        return;
-                    }
-                    Module module = ModuleUtil.findModuleForFile(panel.getVirtualFile(), project);
-                    GlobalSearchScope moduleScope = module == null ? null : GlobalSearchScope.moduleScope(module);
-                    GlobalSearchScope moduleRuntimeScope = GlobalSearchScope.moduleRuntimeScope(module, true);
-                    GlobalSearchScope dependentsScope = GlobalSearchScope.moduleWithDependentsScope(module);
-                    GlobalSearchScope librariesScope = GlobalSearchScope.moduleWithLibrariesScope(module);
+                if(fileEditorManager == null ){
+                    Messages.showErrorDialog("FileEditorManager not found", "Error");
+                    return false;
+                }
+                if(panel.getVirtualFile()==null){
+                    Messages.showErrorDialog("Panel has no file", "Error");
+                    return false;
+                }
+                Module module = ModuleUtil.findModuleForFile(panel.getVirtualFile(), project);
+                GlobalSearchScope moduleScope = module == null ? null : GlobalSearchScope.moduleScope(module);
+                GlobalSearchScope moduleRuntimeScope = GlobalSearchScope.moduleRuntimeScope(module, true);
+                GlobalSearchScope dependentsScope = GlobalSearchScope.moduleWithDependentsScope(module);
+                GlobalSearchScope librariesScope = GlobalSearchScope.moduleWithLibrariesScope(module);
 
-                    GlobalSearchScope allScope = GlobalSearchScope.allScope(project);
+                GlobalSearchScope allScope = GlobalSearchScope.allScope(project);
 
-                    PsiClass psiClass = findClass(split[0], javaPsiFacade,
-                            new GlobalSearchScope[]{moduleScope, moduleRuntimeScope, dependentsScope, librariesScope, allScope});
-                    if (psiClass == null){
-                        Messages.showErrorDialog("Class not found: " + split[0] + " or can not navigate", "Error");
-                        return;
-                    }
-                    int line = 1;
-                    if (split.length > 1 && StringUtils.isNotBlank(split[1])) {
-                        line = Integer.parseInt(split[1]);
-                    }
-                    OpenFileDescriptor descriptor = new OpenFileDescriptor(project, psiClass.getContainingFile().getVirtualFile(), line-1, 1);
-                    fileEditorManager.openEditor(descriptor, true);
-                });
+                PsiClass psiClass = findClass(split[0], javaPsiFacade,
+                        new GlobalSearchScope[]{moduleScope, moduleRuntimeScope, dependentsScope, librariesScope, allScope});
+                if (psiClass == null){
+                    Messages.showErrorDialog("Class not found: " + split[0] + " or can not navigate", "Error");
+                    return false;
+                }
+                int line = 1;
+                if (split.length > 1 && StringUtils.isNotBlank(split[1])) {
+                    line = Integer.parseInt(split[1]);
+                }
+                OpenFileDescriptor descriptor = new OpenFileDescriptor(project, psiClass.getContainingFile().getVirtualFile(), line-1, 1);
+                fileEditorManager.openEditor(descriptor, true);
                 return true;
             } catch (Exception e) {
                 return false;

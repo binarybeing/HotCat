@@ -33,7 +33,7 @@ public class EventContext {
         return eventQueue.size() > 0;
     }
 
-    public static AnActionEvent getEvent(Long id){
+    public static AnActionEvent getEvent(Long id) throws Exception{
         if (id == 999999999L) {
             ApplicationRunnerUtils.run(() ->{
                 EmptyAction emptyAction = new EmptyAction();

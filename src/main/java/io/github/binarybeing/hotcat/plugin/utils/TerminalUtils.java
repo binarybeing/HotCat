@@ -103,56 +103,40 @@ public class TerminalUtils {
 
     public static String doCommand(Project project, String terminalName, String cmd, Map<String, String> conditions) throws IOException, InterruptedException {
         TerminalView terminalView = TerminalView.getInstance(project);
-        Semaphore semaphore = new Semaphore(0);
-        String[] res = new String[]{""};
         queue.clear();
-        ApplicationManager.getApplication().invokeLater(()->{
-            try {
-                ShellTerminalWidget widget = widgetMap.remove(terminalName);
-                if (widget != null) {
-                    widget.dispose();
-                }
-                ShellTerminalWidget shWidget = terminalView.createLocalShellWidget(terminalName, terminalName);
-                widgetMap.put(terminalName, shWidget);
-                StringBuilder sb = new StringBuilder();
-                shWidget.addMessageFilter((s, i) -> {
-                    LOG.info("widgetSecond new line =" + s);
-                    //以回车结尾
-                    queue.offer(s);
-                    for (Map.Entry<String, String> entry : conditions.entrySet()) {
-                        if (s.startsWith(entry.getKey())) {
-                            LOG.info("widgetSecond new line =" + s);
-                            try {
-                                shWidget.executeCommand(entry.getValue());
-                            } catch (Exception e) {
-                                LogUtils.addLog("executeCommand error " + entry.getValue() + " " + e.getMessage());
-                            }
-                        }
-
-                    }
-                    return null;
-                });
-
-                try {
-                    shWidget.executeCommand(cmd);
-
-                    res[0] = sb.toString();
-                } catch (Exception e) {
-                    LogUtils.addLog("executeCommand error " + cmd + " " + e.getMessage());
-                }
-            }finally {
-                semaphore.release();
-            }
-        });
-        acquire(semaphore);
-        return res[0];
-    }
-
-    private static void acquire(Semaphore semaphore) {
-        try {
-            semaphore.acquire(1);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+        ShellTerminalWidget widget = widgetMap.remove(terminalName);
+        if (widget != null) {
+            widget.dispose();
         }
+        ShellTerminalWidget shWidget = terminalView.createLocalShellWidget(terminalName, terminalName);
+        widgetMap.put(terminalName, shWidget);
+        StringBuilder sb = new StringBuilder();
+        shWidget.addMessageFilter((s, i) -> {
+            LOG.info("widgetSecond new line =" + s);
+            //以回车结尾
+            queue.offer(s);
+            for (Map.Entry<String, String> entry : conditions.entrySet()) {
+                if (s.startsWith(entry.getKey())) {
+                    LOG.info("widgetSecond new line =" + s);
+                    try {
+                        shWidget.executeCommand(entry.getValue());
+                    } catch (Exception e) {
+                        LogUtils.addLog("executeCommand error " + entry.getValue() + " " + e.getMessage());
+                    }
+                }
+
+            }
+            return null;
+        });
+
+        try {
+            shWidget.executeCommand(cmd);
+
+            return sb.toString();
+        } catch (Exception e) {
+            LogUtils.addLog("executeCommand error " + cmd + " " + e.getMessage());
+        }
+        return "";
     }
+
 }

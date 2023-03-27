@@ -3,10 +3,11 @@ package io.github.binarybeing.hotcat.plugin.editor;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.actionSystem.DataContext;
+import com.intellij.openapi.editor.markup.EffectType;
+import com.intellij.openapi.editor.markup.TextAttributes;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-
-import java.util.Locale;
+import com.intellij.ui.JBColor;
 
 /**
  * @author gn.binarybei
@@ -31,8 +32,8 @@ public class Editor {
         if (virtualFile == null) {
             return "project not found";
         }
-
-        editor.getSelectionModel().setSelection(0, 1000);
+        TextAttributes attributes = new TextAttributes(null, JBColor.CYAN, JBColor.BLUE, EffectType.BOLD_DOTTED_LINE, 0);
+        editor.getMarkupModel().addLineHighlighter(39, 0, attributes);
         return "success";
         //return editor.getSelectionModel().getSelectedText().toUpperCase(Locale.ROOT);
     }
