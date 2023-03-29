@@ -20,25 +20,25 @@ public abstract class BaseEventScriptController extends AbstractController{
     @Override
     protected @NotNull Response handle(Request request) {
         Long eventId = JsonUtils.readJsonLongValue(request.getJsonObject(), "eventId");
-        AnActionEvent event = EventContext.getEvent(eventId);
-        if (checkEventId()) {
-            if (event == null) {
-                return Response.error("event not found");
-            }
-        }
-        String script = JsonUtils.readJsonStringValue(request.getJsonObject(), "script");
-        if (checkScript()) {
-            if (StringUtils.isEmpty(script)) {
-                return Response.error("script is empty");
-            }
-        }
         try {
+            AnActionEvent event = EventContext.getEvent(eventId);
+            if (checkEventId()) {
+                if (event == null) {
+                    return Response.error("event not found");
+                }
+            }
+            String script = JsonUtils.readJsonStringValue(request.getJsonObject(), "script");
+            if (checkScript()) {
+                if (StringUtils.isEmpty(script)) {
+                    return Response.error("script is empty");
+                }
+            }
             LogUtils.addEventLogs(eventId,"handleRequest: " + request);
             LogUtils.addLog("handleRequest: " + request);
             return ApplicationRunnerUtils.run(() -> handle(request, event, script));
         } catch (Exception e) {
-            LogUtils.addEventLogs(eventId,"handleRequest error: " + e);
-            return Response.error(ServerException.of(e, "handleRequest error").getMessage());
+            LogUtils.addError(e, "handleRequest error: " + request);
+            return Response.error(ServerException.of(e,  "handleRequest error").getMessage());
         }
     }
     protected abstract Response handle(Request request, AnActionEvent event, String script);

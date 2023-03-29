@@ -19,8 +19,7 @@ repositories {
 // Configure Gradle IntelliJ Plugin - read more: https://github.com/JetBrains/gradle-intellij-plugin
 intellij {
     version.set("2018.1")
-    type.set("IC") //// Target IDE Platform
-
+    type.set("IU") //// Target IDE Platform
     plugins.set(listOf("org.jetbrains.plugins.terminal"))
 }
 

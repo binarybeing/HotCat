@@ -1,8 +1,5 @@
 package io.github.binarybeing.hotcat.plugin.server;
 
-import java.io.PrintStream;
-import java.io.PrintWriter;
-
 /**
  * @author gn.binarybei
  * @date 2023/3/24
@@ -21,61 +18,22 @@ public class ServerException extends Exception{
 
     @Override
     public String getMessage() {
-        StringBuilder builder = new StringBuilder();
-        StackTraceElement[] traceElements = e.getStackTrace();
-        for (StackTraceElement traceElement : traceElements) {
-            builder.append("\tat ").append(traceElement).append("\n");
+        return msg + " " + getMessageFromException(e, 0);
+    }
+
+    private String getMessageFromException(Throwable t, int depth){
+        if(depth > 10){
+            return "";
         }
-        return this.e.getMessage()+ "\n" + this.e.getCause().getMessage() + "\n" + builder;
-    }
-
-    @Override
-    public String getLocalizedMessage() {
-        return this.e.getLocalizedMessage();
-    }
-
-    @Override
-    public synchronized Throwable getCause() {
-        return this.e.getCause();
-    }
-
-    @Override
-    public synchronized Throwable initCause(Throwable cause) {
-        return this.e.initCause(cause);
-    }
-
-    @Override
-    public String toString() {
-        return this.e.toString();
-    }
-
-    @Override
-    public void printStackTrace() {
-        super.printStackTrace();
-    }
-
-    @Override
-    public void printStackTrace(PrintStream s) {
-        super.printStackTrace(s);
-    }
-
-    @Override
-    public void printStackTrace(PrintWriter s) {
-        super.printStackTrace(s);
-    }
-
-    @Override
-    public synchronized Throwable fillInStackTrace() {
-        return this.e.fillInStackTrace();
-    }
-
-    @Override
-    public StackTraceElement[] getStackTrace() {
-        return this.e.getStackTrace();
-    }
-
-    @Override
-    public void setStackTrace(StackTraceElement[] stackTrace) {
-        super.setStackTrace(stackTrace);
+        StringBuilder sb = new StringBuilder();
+        sb.append("Caused by: ").append(t.getClass().getName()).append(": ").append(t.getMessage()).append("\n");
+        for (StackTraceElement element : t.getStackTrace()) {
+            sb.append("\tat ").append(element).append("\n");
+        }
+        sb.append("\n");
+        if (t.getCause() != null) {
+            sb.append(getMessageFromException(t.getCause(), depth + 1));
+        }
+        return sb.toString();
     }
 }

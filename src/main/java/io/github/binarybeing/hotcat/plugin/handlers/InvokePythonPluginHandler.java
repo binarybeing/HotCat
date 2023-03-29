@@ -9,6 +9,7 @@ import io.github.binarybeing.hotcat.plugin.utils.LogUtils;
 import io.github.binarybeing.hotcat.plugin.utils.PluginFileUtils;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,7 +36,7 @@ public class InvokePythonPluginHandler implements IdeaEventHandler {
     });
 
     @Override
-    public void handle(PluginEntity plugin, AnActionEvent event) {
+    public void handle(PluginEntity plugin, AnActionEvent event) throws Exception {
         Long eventId = EventContext.registerEvent(event);
         String absolutePath = plugin.getFile().getAbsolutePath();
         String cmd = "python3 '" + absolutePath + "' " + Server.INSTANCE.getPort() + " " + eventId + " '" + absolutePath+"'";
@@ -44,18 +45,14 @@ public class InvokePythonPluginHandler implements IdeaEventHandler {
             cmds.removeLast();
         }
         LogUtils.addLog("Runtime execute cmd: " + cmd);
-        try {
-            String cmdPath = PluginFileUtils.getPluginDirName()+"/shell_runner.sh";
-            ProcessBuilder builder = new ProcessBuilder("sh", cmdPath, absolutePath, String.valueOf(Server.INSTANCE.getPort()),
-                    String.valueOf(eventId));
-            builder.redirectErrorStream(true);
+        String cmdPath = PluginFileUtils.getPluginDirName()+"/shell_runner.sh";
+        ProcessBuilder builder = new ProcessBuilder("sh", cmdPath, absolutePath, String.valueOf(Server.INSTANCE.getPort()),
+                String.valueOf(eventId));
+        builder.redirectErrorStream(true);
 
-            Process process = builder.start();
+        Process process = builder.start();
 
-            handOutPut(plugin, process);
-        } catch (Exception e) {
-            LogUtils.addError(e, "Runtime execute cmd error: " + e.getMessage());
-        }
+        handOutPut(plugin, process);
     }
 
     @Override

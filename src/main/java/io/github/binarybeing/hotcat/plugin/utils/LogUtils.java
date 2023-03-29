@@ -1,5 +1,6 @@
 package io.github.binarybeing.hotcat.plugin.utils;
 
+import io.github.binarybeing.hotcat.plugin.server.ServerException;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.ArrayList;
@@ -59,12 +60,8 @@ public class LogUtils {
     }
     public static void addError(Exception exp, String log){
         logs.add(Pair.of(System.currentTimeMillis(), log+" : "+exp.getMessage()));
-        int i = 0;
-        StackTraceElement[] traceElements = exp.getStackTrace();
-        while(i<20 && i<traceElements.length){
-            logs.add(Pair.of(System.currentTimeMillis(), traceElements[i].toString()));
-            i++;
-        }
+        String message = ServerException.of(exp, log).getMessage();
+        logs.add(Pair.of(System.currentTimeMillis(), message));
         if(logs.size()>1000){
             try {
                 logs.pollFirst();

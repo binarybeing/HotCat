@@ -186,8 +186,8 @@ public class IdeaPanelController extends BaseEventScriptController {
             }
             String processId = UUID.randomUUID().toString();
             ProcessingRunnable processingRunnable = new ProcessingRunnable(project, title, processId);
-            BackgroundableProcessIndicator indicator = new BackgroundableProcessIndicator(processingRunnable);
-            ProgressManager.getInstance().runProcessWithProgressAsynchronously(processingRunnable, indicator);
+            ProgressIndicator progressIndicator = new BackgroundableProcessIndicator(processingRunnable);
+            ProgressManager.getInstance().runProcessWithProgressAsynchronously(processingRunnable, progressIndicator);
             return processId;
         }
 

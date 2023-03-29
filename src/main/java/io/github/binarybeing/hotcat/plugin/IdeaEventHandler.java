@@ -11,6 +11,6 @@ import io.github.binarybeing.hotcat.plugin.entity.PluginEntity;
 public interface IdeaEventHandler {
 
     void handle(String name, AnActionEvent event);
-    void handle(PluginEntity plugin, AnActionEvent event);
+    void handle(PluginEntity plugin, AnActionEvent event) throws Exception;
 
 }

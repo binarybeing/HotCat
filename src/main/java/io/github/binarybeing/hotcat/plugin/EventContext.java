@@ -33,12 +33,12 @@ public class EventContext {
         return eventQueue.size() > 0;
     }
 
-    public static AnActionEvent getEvent(Long id){
+    public static AnActionEvent getEvent(Long id) throws Exception{
         if (id == 999999999L) {
             ApplicationRunnerUtils.run(() ->{
                 EmptyAction emptyAction = new EmptyAction();
                 ActionCallback callback = ActionManager.getInstance().tryToExecute(emptyAction, null, null, null, true);
-                callback.wait();
+                callback.waitFor(5 * 1000L);
                 return emptyAction.getEvent();
             });
             if(eventQueue.size() > 0){

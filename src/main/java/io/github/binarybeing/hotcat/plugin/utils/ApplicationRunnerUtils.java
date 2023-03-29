@@ -1,13 +1,7 @@
 package io.github.binarybeing.hotcat.plugin.utils;
 
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.vfs.VirtualFileManager;
-import com.intellij.psi.impl.file.impl.FileManager;
 
-import java.io.File;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Semaphore;
 
@@ -18,14 +12,15 @@ import java.util.concurrent.Semaphore;
  */
 public class ApplicationRunnerUtils {
 
-    public static <T>  T run(Callable<T> callable){
+    public static <T>  T run(Callable<T> callable) throws Exception {
         Semaphore semaphore = new Semaphore(0);
-        final Object[] res = new Object[1];
+        final Object[] res = new Object[2];
+
         ApplicationManager.getApplication().invokeLater(()->{
             try {
                 res[0] = callable.call();
             }catch (Exception e) {
-                e.printStackTrace();
+                res[1] = e;
                 LogUtils.addLog("ApplicationRunnerUtils run error "+ e.getMessage());
             }finally {
                 semaphore.release();
@@ -37,7 +32,9 @@ public class ApplicationRunnerUtils {
             e.printStackTrace();
             LogUtils.addLog("ApplicationRunnerUtils run error, semaphore.acquire error "+ e.getMessage());
         }
-
+        if (res[1] != null) {
+            throw (Exception) res[1];
+        }
         //noinspection unchecked
         return (T) res[0];
     }
