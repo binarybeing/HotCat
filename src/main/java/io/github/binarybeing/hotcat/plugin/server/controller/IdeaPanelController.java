@@ -200,7 +200,7 @@ public class IdeaPanelController extends BaseEventScriptController {
             }
             ProcessingRunnable runnable = ProcessingRunnable.PROCESS_MAP.get(processId);
             if (runnable != null) {
-                runnable.stop = true;
+                runnable.release();
             }
             return processId;
         }
@@ -208,24 +208,19 @@ public class IdeaPanelController extends BaseEventScriptController {
     private static class ProcessingRunnable extends Task.Backgroundable implements Runnable{
         private static final Map<String, ProcessingRunnable> PROCESS_MAP = new ConcurrentHashMap<>();
 
-        private String processId;
-
-        private boolean stop = false;
+        private final Semaphore semaphore = new Semaphore(0);
 
         public ProcessingRunnable(Project project, String title,String processId) {
             super(project, title);
-            this.processId = processId;
             PROCESS_MAP.put(processId, this);
         }
 
         @Override
         public void run() {
-            while (!stop){
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+            try {
+                semaphore.acquire();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             }
         }
 
@@ -233,14 +228,14 @@ public class IdeaPanelController extends BaseEventScriptController {
         @Override
         public void run(@NotNull ProgressIndicator progressIndicator) {
             progressIndicator.setIndeterminate(true);
-            while (!stop){
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+            try {
+                semaphore.acquire();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             }
-
+        }
+        public void release(){
+            semaphore.release(100);
         }
     }
 }
