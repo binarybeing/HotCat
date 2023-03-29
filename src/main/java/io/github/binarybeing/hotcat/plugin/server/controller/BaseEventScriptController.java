@@ -37,9 +37,8 @@ public abstract class BaseEventScriptController extends AbstractController{
             LogUtils.addLog("handleRequest: " + request);
             return ApplicationRunnerUtils.run(() -> handle(request, event, script));
         } catch (Exception e) {
-            String message = ServerException.of(e, "handleRequest error").getMessage();
-            LogUtils.addEventLogs(eventId,message);
-            return Response.error(message);
+            LogUtils.addError(e, "handleRequest error: " + request);
+            return Response.error(ServerException.of(e,  "handleRequest error").getMessage());
         }
     }
     protected abstract Response handle(Request request, AnActionEvent event, String script);

@@ -49,7 +49,7 @@ public class HotCatActionGroup extends ActionGroup {
     }
 
     @Override
-    public AnAction @NotNull [] getChildren(@Nullable AnActionEvent e) {
+    public @NotNull AnAction[] getChildren(@Nullable AnActionEvent e) {
         List<PluginEntity> pluginEntities = PluginFileUtils.listPlugin();
 
         IdeaEventHandler handler = new InvokePythonPluginHandler();
@@ -79,7 +79,7 @@ public class HotCatActionGroup extends ActionGroup {
                 List<AnAction> subActions = getPlugins(subMenus, handler, groupName + "/" + plugin.getName());
                 ActionGroup group = new ActionGroup(plugin.getName(), true){
                     @Override
-                    public AnAction @NotNull [] getChildren(@Nullable AnActionEvent e) {
+                    public @NotNull AnAction [] getChildren(@Nullable AnActionEvent e) {
                         return subActions.toArray(new AnAction[0]);
                     }
                 };

@@ -38,7 +38,7 @@ public class EventContext {
             ApplicationRunnerUtils.run(() ->{
                 EmptyAction emptyAction = new EmptyAction();
                 ActionCallback callback = ActionManager.getInstance().tryToExecute(emptyAction, null, null, null, true);
-                callback.wait();
+                callback.waitFor(5 * 1000L);
                 return emptyAction.getEvent();
             });
             if(eventQueue.size() > 0){

@@ -134,15 +134,9 @@ public class IdeaDebuggerController extends BaseEventScriptController{
                 remoteServer = new RemoteServerImpl<>("", null, null);
             }
             final RemoteServer<?> server = remoteServer;
-
-            try {
-                JavaDebugConnectionData data = new JavaDebugConnectionData(getHost(), getPort());
-                JavaDebuggerLauncher.getInstance().startDebugSession(data, executionEnvironment , server);
-                return "debugger started";
-            } catch (Exception e) {
-                LogUtils.addError(e, "create debugger error ");
-                throw e;
-            }
+            JavaDebugConnectionData data = new JavaDebugConnectionData(getHost(), getPort());
+            JavaDebuggerLauncher.getInstance().startDebugSession(data, executionEnvironment , server);
+            return "debugger started";
         }
     }
 

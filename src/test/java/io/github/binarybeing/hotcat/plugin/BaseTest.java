@@ -12,6 +12,7 @@ import java.net.http.HttpResponse;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author gn.binarybei
@@ -46,8 +47,9 @@ public abstract class BaseTest {
         HttpRequest.Builder post = builder.POST(HttpRequest.BodyPublishers.ofString(new Gson().toJson(map)));
         HttpRequest request = post.build();
         HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
-        System.out.println(response.body());
-        //builder.POST(HttpRequest.BodyPublishers.ofString());
-        System.out.println(this.getClass());
+        Map<String, Object> resp = new Gson().fromJson(response.body(), Map.class);
+        System.out.println(this.getClass() + " run resp:");
+        System.out.println(resp.get("code"));
+        System.out.println(resp.get("msg"));
     }
 }

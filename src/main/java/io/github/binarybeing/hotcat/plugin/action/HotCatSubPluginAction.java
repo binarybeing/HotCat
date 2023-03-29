@@ -6,6 +6,7 @@ import com.intellij.openapi.actionSystem.Shortcut;
 import com.intellij.openapi.actionSystem.ShortcutSet;
 import io.github.binarybeing.hotcat.plugin.IdeaEventHandler;
 import io.github.binarybeing.hotcat.plugin.entity.PluginEntity;
+import io.github.binarybeing.hotcat.plugin.utils.LogUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -27,7 +28,11 @@ public class HotCatSubPluginAction extends AnAction {
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
-        handler.handle(plugin, e);
+        try {
+            handler.handle(plugin, e);
+        }catch (Exception ex){
+            LogUtils.addError(ex, "HotCatSubPluginAction.actionPerformed error");
+        }
     }
 
     @Override

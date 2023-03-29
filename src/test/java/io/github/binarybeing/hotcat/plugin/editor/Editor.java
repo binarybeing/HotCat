@@ -33,7 +33,7 @@ public class Editor {
             return "project not found";
         }
         TextAttributes attributes = new TextAttributes(null, JBColor.CYAN, JBColor.BLUE, EffectType.BOLD_DOTTED_LINE, 0);
-        editor.getMarkupModel().addLineHighlighter(39, 0, attributes);
+        editor.getMarkupModel().addLineHighlighter(2, 0, attributes);
         return "success";
         //return editor.getSelectionModel().getSelectedText().toUpperCase(Locale.ROOT);
     }

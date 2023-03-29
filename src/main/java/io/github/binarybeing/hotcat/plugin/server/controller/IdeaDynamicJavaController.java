@@ -66,12 +66,11 @@ public class IdeaDynamicJavaController extends BaseEventScriptController{
                 }
                 return invokeRes;
             }catch (Exception e){
-                LogUtils.addError(e, "load class error");
+                LogUtils.addError(e, "execute class error：" + className);
+                throw e;
             }finally {
                 hotCatClassLoader = new HotCatClassLoader();
             }
-            return invokeRes;
-
         }
 
         private Object invokeMethod(Class<?> defineClass, Method method) throws Exception {
