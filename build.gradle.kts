@@ -7,10 +7,10 @@ dependencies {
     implementation("com.google.code.gson:gson:2.8.6")
     implementation("org.apache.commons:commons-jexl3:3.1")
     implementation("org.reflections:reflections:0.9.10")
-
+    implementation("com.google.code.javaparser:javaparser:1.0.8")
 }
 group = "io.github.binarybeing.hotcat"
-version = "1.3.5.213223.2"
+version = "1.3.5.213223.3"
 
 repositories {
     mavenCentral()
@@ -34,7 +34,7 @@ tasks {
 
     patchPluginXml {
         sinceBuild.set("213.0")
-        untilBuild.set("223.*")
+        untilBuild.set("231.*")
     }
 
     signPlugin {
