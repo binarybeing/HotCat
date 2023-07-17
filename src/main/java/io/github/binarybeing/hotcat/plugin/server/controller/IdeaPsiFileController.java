@@ -18,7 +18,7 @@ import org.jetbrains.annotations.NotNull;
  */
 public class IdeaPsiFileController extends BaseEventScriptController {
     @Override
-    String path() {
+    public String path() {
         return "/api/idea/psi_file";
     }
 

@@ -7,7 +7,8 @@ dependencies {
     implementation("com.google.code.gson:gson:2.8.6")
     implementation("org.apache.commons:commons-jexl3:3.1")
     implementation("org.reflections:reflections:0.9.10")
-    implementation("com.google.code.javaparser:javaparser:1.0.8")
+    implementation("com.github.javaparser:javaparser-core:3.24.2")
+    implementation("com.github.javaparser:javaparser-symbol-solver-core:3.24.2")
 }
 group = "io.github.binarybeing.hotcat"
 version = "1.3.5.213223.3"

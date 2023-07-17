@@ -6,6 +6,8 @@ import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileChooser.FileChooser;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
+import com.intellij.openapi.fileEditor.FileEditor;
+import com.intellij.openapi.fileEditor.impl.text.TextEditorProvider;
 import com.intellij.openapi.progress.EmptyProgressIndicator;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
@@ -20,6 +22,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import io.github.binarybeing.hotcat.plugin.server.dto.Request;
 import io.github.binarybeing.hotcat.plugin.server.dto.Response;
 import io.github.binarybeing.hotcat.plugin.utils.DialogUtils;
+import io.github.binarybeing.hotcat.plugin.utils.SidePanelUtils;
 import org.apache.commons.jexl3.JexlExpression;
 import org.apache.commons.jexl3.MapContext;
 import org.apache.commons.lang3.ArrayUtils;
@@ -28,6 +31,7 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.File;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,7 +44,7 @@ import java.util.concurrent.Semaphore;
  */
 public class IdeaPanelController extends BaseEventScriptController {
     @Override
-    String path() {
+    public String path() {
         return "/api/idea/panel";
     }
     @Override
@@ -203,6 +207,28 @@ public class IdeaPanelController extends BaseEventScriptController {
                 runnable.release();
             }
             return processId;
+        }
+
+        public String showSidePanelEditor(String panelName, String file) {
+            File panelFile = new File(file);
+            if (!panelFile.exists()) {
+                throw new RuntimeException("file not exist");
+            }
+            if (event == null || event.getProject() == null) {
+                throw new RuntimeException("project is null");
+            }
+            VirtualFile testVFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(panelFile);
+            if (testVFile == null) {
+                throw new RuntimeException(String.format("idea virtual file of %s not exist", file));
+            }
+            FileEditor editor = TextEditorProvider.getInstance().createEditor(event.getProject(), testVFile);
+            try {
+                SidePanelUtils.showSidePanel(event, panelName, panelFile.getName(), editor.getComponent(), () -> {
+                });
+            } catch (Exception e) {
+                throw new RuntimeException("open file failed: "+ e.getMessage());
+            }
+            return "success";
         }
     }
     private static class ProcessingRunnable extends Task.Backgroundable implements Runnable{

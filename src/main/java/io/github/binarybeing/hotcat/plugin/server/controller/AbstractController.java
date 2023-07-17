@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
  */
 public abstract class AbstractController {
     protected JexlEngine jexlEngine = new JexlBuilder().create();
-    abstract String path();
+    public abstract String path();
 
     public Response handleRequest(Request request){
         return handle(request);

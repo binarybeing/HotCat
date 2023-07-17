@@ -24,7 +24,7 @@ public class IdeaDynamicJavaController extends BaseEventScriptController{
     private static HotCatClassLoader hotCatClassLoader = new HotCatClassLoader();
 
     @Override
-    String path() {
+    public String path() {
         return "/api/idea/java_executor";
     }
 

@@ -21,7 +21,7 @@ import java.util.Map;
  */
 public class IdeaTerminalController extends BaseEventScriptController {
     @Override
-    String path() {
+    public String path() {
         return "/api/idea/terminal";
     }
     @Override

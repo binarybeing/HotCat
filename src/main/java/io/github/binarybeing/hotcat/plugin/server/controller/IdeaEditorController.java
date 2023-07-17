@@ -18,7 +18,7 @@ import org.apache.commons.jexl3.MapContext;
  */
 public class IdeaEditorController extends BaseEventScriptController {
     @Override
-    String path() {
+    public String path() {
         return "/api/idea/editor";
     }
 

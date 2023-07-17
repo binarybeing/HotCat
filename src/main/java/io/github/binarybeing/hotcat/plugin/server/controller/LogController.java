@@ -12,7 +12,7 @@ import io.github.binarybeing.hotcat.plugin.utils.LogUtils;
  */
 public class LogController extends AbstractController {
     @Override
-    String path() {
+    public String path() {
         return "/api/log";
     }
     @SuppressWarnings("AlibabaAvoidManuallyCreateThread")

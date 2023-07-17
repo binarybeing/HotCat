@@ -17,7 +17,7 @@ import org.jetbrains.annotations.NotNull;
  */
 public class IdeaProjectController extends BaseEventScriptController{
     @Override
-    String path() {
+    public String path() {
         return "/api/idea/project";
     }
 

@@ -37,7 +37,7 @@ import java.util.concurrent.Semaphore;
 public class IdeaDebuggerController extends BaseEventScriptController{
 
     @Override
-    String path() {
+    public String path() {
         return "/api/idea/debugger";
     }
 
