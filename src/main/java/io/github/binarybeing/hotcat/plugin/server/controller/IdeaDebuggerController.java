@@ -106,7 +106,8 @@ public class IdeaDebuggerController extends BaseEventScriptController{
             ConfigurationType debugType = null;
             for (ConfigurationType type : ConfigurationTypeBase.CONFIGURATION_TYPE_EP.getExtensionList()) {
                 if ("Remote JVM Debug".equals(type.getDisplayName())
-                     || "Remote".equals(type.getDisplayName())) {
+                     || "Remote".equals(type.getDisplayName())
+                     || "远程 JVM 调试".equals(type.getDisplayName())) {
                     debugType = type;
                     break;
                 }

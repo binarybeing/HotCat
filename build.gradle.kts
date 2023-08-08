@@ -11,7 +11,7 @@ dependencies {
     implementation("com.github.javaparser:javaparser-symbol-solver-core:3.24.2")
 }
 group = "io.github.binarybeing.hotcat"
-version = "1.3.5.213223.3"
+version = "1.3.5.213223.4"
 
 repositories {
     mavenCentral()
