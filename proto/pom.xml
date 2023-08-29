@@ -9,9 +9,29 @@
     <version>1.0-SNAPSHOT</version>
 
     <properties>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
+        <java.compiler.source>8</java.compiler.source>
+        <java.compiler.target>8</java.compiler.target>
     </properties>
+
+
+    <dependencies>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-netty-shaded</artifactId>
+            <version>1.48.0</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-protobuf</artifactId>
+            <version>1.48.0</version>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-stub</artifactId>
+            <version>1.48.0</version>
+        </dependency>
+    </dependencies>
 
 
     <build>
@@ -32,9 +52,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <encoding>UTF-8</encoding>
-                    <compilerVersion>1.8</compilerVersion>
-                    <source>${maven.compiler.source}</source>
-                    <target>${maven.compiler.target}</target>
+                    <source>${java.compiler.source}</source>
+                    <target>${java.compiler.target}</target>
                 </configuration>
                 <version>2.5.1</version>
             </plugin>
@@ -52,10 +71,6 @@
                 <version>2.1</version>
                 <executions>
                     <execution>
-                        <id>attach-sources</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
                     </execution>
                 </executions>
             </plugin>
@@ -84,7 +99,9 @@
                     <execution>
                         <goals>
                             <goal>compile</goal>
+                            <goal>compile-python</goal>
                             <goal>compile-custom</goal>
+                            <goal>test-compile-python</goal>
                         </goals>
                     </execution>
                 </executions>
