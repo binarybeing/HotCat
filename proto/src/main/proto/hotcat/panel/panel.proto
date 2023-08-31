@@ -58,6 +58,7 @@ message FloatMiniEditorRequest{
   optional int32 line = 4;
   optional string floatDefaultContent = 5;
   optional bool callback = 6;
+  optional bool multiLine = 7;
 }
 
 message InputElement{

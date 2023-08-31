@@ -21,7 +21,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=b'\n)com.github.binarybeing.hotcat.porto.panelB\020PanelGrpcServiceP\000',
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x18hotcat/panel/panel.proto\x12\x0chotcat.panel\x1a\x13hotcat/common.proto\x1a\x19google/protobuf/any.proto\"1\n\x11\x42\x61sicPanelRequest\x12\x0f\n\x07\x65ventId\x18\x01 \x01(\x03\x12\x0b\n\x03msg\x18\x02 \x01(\t\"K\n\x11SideEditorRequest\x12\x0f\n\x07\x65ventId\x18\x01 \x01(\x03\x12\x11\n\tpanelName\x18\x02 \x01(\t\x12\x12\n\nfileAbPath\x18\x03 \x01(\t\"s\n\x0b\x46ormRequest\x12\x0f\n\x07\x65ventId\x18\x01 \x01(\x03\x12\r\n\x05title\x18\x02 \x01(\t\x12\x12\n\x05width\x18\x03 \x01(\x05H\x00\x88\x01\x01\x12&\n\x08\x65lements\x18\x04 \x03(\x0b\x32\x14.google.protobuf.AnyB\x08\n\x06_width\"\x98\x01\n\x11\x46ileChooseRequest\x12\x0f\n\x07\x65ventId\x18\x01 \x01(\x03\x12\x11\n\x04path\x18\x02 \x01(\tH\x00\x88\x01\x01\x12\x15\n\x08typeFile\x18\x03 \x01(\x08H\x01\x88\x01\x01\x12\x14\n\x07typeDir\x18\x04 \x01(\x08H\x02\x88\x01\x01\x12\x10\n\x08suffixes\x18\x05 \x03(\tB\x07\n\x05_pathB\x0b\n\t_typeFileB\n\n\x08_typeDir\"\xc4\x01\n\x16\x46loatMiniEditorRequest\x12\x0f\n\x07\x65ventId\x18\x01 \x01(\x03\x12\r\n\x05title\x18\x02 \x01(\t\x12\x10\n\x08\x66romFile\x18\x03 \x01(\t\x12\x11\n\x04line\x18\x04 \x01(\x05H\x00\x88\x01\x01\x12 \n\x13\x66loatDefaultContent\x18\x05 \x01(\tH\x01\x88\x01\x01\x12\x15\n\x08\x63\x61llback\x18\x06 \x01(\x08H\x02\x88\x01\x01\x42\x07\n\x05_lineB\x16\n\x14_floatDefaultContentB\x0b\n\t_callback\"B\n\x0cInputElement\x12\r\n\x05label\x18\x01 \x01(\t\x12\r\n\x05\x66ield\x18\x02 \x01(\t\x12\x14\n\x0c\x64\x65\x66\x61ultValue\x18\x03 \x01(\t\"`\n\rSelectElement\x12\r\n\x05label\x18\x01 \x01(\t\x12\r\n\x05\x66ield\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x03(\t\x12\r\n\x05value\x18\x04 \x03(\t\x12\x14\n\x0c\x64\x65\x66\x61ultValue\x18\x05 \x01(\t\"S\n\x0c\x43heckElement\x12\r\n\x05label\x18\x01 \x01(\t\x12\r\n\x05\x66ield\x18\x02 \x01(\t\x12\x14\n\x0c\x64\x65\x66\x61ultValue\x18\x03 \x01(\t\x12\x0f\n\x07\x63hecked\x18\x04 \x01(\x08\"1\n\x08\x46ormInfo\x12%\n\x07kvPairs\x18\x01 \x03(\x0b\x32\x14.hotcat.panel.KvPair\"$\n\x06KvPair\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t2\xe7\x05\n\x0cPanelService\x12=\n\nshowAndGet\x12\x19.hotcat.panel.FormRequest\x1a\x14.hotcat.DataResponse\x12\x42\n\tshowError\x12\x1f.hotcat.panel.BasicPanelRequest\x1a\x14.hotcat.DataResponse\x12@\n\x07showMsg\x12\x1f.hotcat.panel.BasicPanelRequest\x1a\x14.hotcat.DataResponse\x12\x44\n\x0bshowConfirm\x12\x1f.hotcat.panel.BasicPanelRequest\x1a\x14.hotcat.DataResponse\x12P\n\x15showFileChooserAndGet\x12\x1f.hotcat.panel.FileChooseRequest\x1a\x16.hotcat.StringResponse\x12I\n\x0eshowProcessing\x12\x1f.hotcat.panel.BasicPanelRequest\x1a\x16.hotcat.StringResponse\x12@\n\x0f\x63loseProcessing\x12\x15.hotcat.StringRequest\x1a\x16.hotcat.StringResponse\x12N\n\x13showSidePanelEditor\x12\x1f.hotcat.panel.SideEditorRequest\x1a\x16.hotcat.StringResponse\x12H\n\x17showSidePanelWebBrowser\x12\x15.hotcat.StringRequest\x1a\x16.hotcat.StringResponse\x12S\n\x13showFloatMiniEditor\x12$.hotcat.panel.FloatMiniEditorRequest\x1a\x16.hotcat.StringResponseB?\n)com.github.binarybeing.hotcat.porto.panelB\x10PanelGrpcServiceP\x00\x62\x06proto3'
+  serialized_pb=b'\n\x18hotcat/panel/panel.proto\x12\x0chotcat.panel\x1a\x13hotcat/common.proto\x1a\x19google/protobuf/any.proto\"1\n\x11\x42\x61sicPanelRequest\x12\x0f\n\x07\x65ventId\x18\x01 \x01(\x03\x12\x0b\n\x03msg\x18\x02 \x01(\t\"K\n\x11SideEditorRequest\x12\x0f\n\x07\x65ventId\x18\x01 \x01(\x03\x12\x11\n\tpanelName\x18\x02 \x01(\t\x12\x12\n\nfileAbPath\x18\x03 \x01(\t\"s\n\x0b\x46ormRequest\x12\x0f\n\x07\x65ventId\x18\x01 \x01(\x03\x12\r\n\x05title\x18\x02 \x01(\t\x12\x12\n\x05width\x18\x03 \x01(\x05H\x00\x88\x01\x01\x12&\n\x08\x65lements\x18\x04 \x03(\x0b\x32\x14.google.protobuf.AnyB\x08\n\x06_width\"\x98\x01\n\x11\x46ileChooseRequest\x12\x0f\n\x07\x65ventId\x18\x01 \x01(\x03\x12\x11\n\x04path\x18\x02 \x01(\tH\x00\x88\x01\x01\x12\x15\n\x08typeFile\x18\x03 \x01(\x08H\x01\x88\x01\x01\x12\x14\n\x07typeDir\x18\x04 \x01(\x08H\x02\x88\x01\x01\x12\x10\n\x08suffixes\x18\x05 \x03(\tB\x07\n\x05_pathB\x0b\n\t_typeFileB\n\n\x08_typeDir\"\xea\x01\n\x16\x46loatMiniEditorRequest\x12\x0f\n\x07\x65ventId\x18\x01 \x01(\x03\x12\r\n\x05title\x18\x02 \x01(\t\x12\x10\n\x08\x66romFile\x18\x03 \x01(\t\x12\x11\n\x04line\x18\x04 \x01(\x05H\x00\x88\x01\x01\x12 \n\x13\x66loatDefaultContent\x18\x05 \x01(\tH\x01\x88\x01\x01\x12\x15\n\x08\x63\x61llback\x18\x06 \x01(\x08H\x02\x88\x01\x01\x12\x16\n\tmultiLine\x18\x07 \x01(\x08H\x03\x88\x01\x01\x42\x07\n\x05_lineB\x16\n\x14_floatDefaultContentB\x0b\n\t_callbackB\x0c\n\n_multiLine\"B\n\x0cInputElement\x12\r\n\x05label\x18\x01 \x01(\t\x12\r\n\x05\x66ield\x18\x02 \x01(\t\x12\x14\n\x0c\x64\x65\x66\x61ultValue\x18\x03 \x01(\t\"`\n\rSelectElement\x12\r\n\x05label\x18\x01 \x01(\t\x12\r\n\x05\x66ield\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x03(\t\x12\r\n\x05value\x18\x04 \x03(\t\x12\x14\n\x0c\x64\x65\x66\x61ultValue\x18\x05 \x01(\t\"S\n\x0c\x43heckElement\x12\r\n\x05label\x18\x01 \x01(\t\x12\r\n\x05\x66ield\x18\x02 \x01(\t\x12\x14\n\x0c\x64\x65\x66\x61ultValue\x18\x03 \x01(\t\x12\x0f\n\x07\x63hecked\x18\x04 \x01(\x08\"1\n\x08\x46ormInfo\x12%\n\x07kvPairs\x18\x01 \x03(\x0b\x32\x14.hotcat.panel.KvPair\"$\n\x06KvPair\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t2\xe7\x05\n\x0cPanelService\x12=\n\nshowAndGet\x12\x19.hotcat.panel.FormRequest\x1a\x14.hotcat.DataResponse\x12\x42\n\tshowError\x12\x1f.hotcat.panel.BasicPanelRequest\x1a\x14.hotcat.DataResponse\x12@\n\x07showMsg\x12\x1f.hotcat.panel.BasicPanelRequest\x1a\x14.hotcat.DataResponse\x12\x44\n\x0bshowConfirm\x12\x1f.hotcat.panel.BasicPanelRequest\x1a\x14.hotcat.DataResponse\x12P\n\x15showFileChooserAndGet\x12\x1f.hotcat.panel.FileChooseRequest\x1a\x16.hotcat.StringResponse\x12I\n\x0eshowProcessing\x12\x1f.hotcat.panel.BasicPanelRequest\x1a\x16.hotcat.StringResponse\x12@\n\x0f\x63loseProcessing\x12\x15.hotcat.StringRequest\x1a\x16.hotcat.StringResponse\x12N\n\x13showSidePanelEditor\x12\x1f.hotcat.panel.SideEditorRequest\x1a\x16.hotcat.StringResponse\x12H\n\x17showSidePanelWebBrowser\x12\x15.hotcat.StringRequest\x1a\x16.hotcat.StringResponse\x12S\n\x13showFloatMiniEditor\x12$.hotcat.panel.FloatMiniEditorRequest\x1a\x16.hotcat.StringResponseB?\n)com.github.binarybeing.hotcat.porto.panelB\x10PanelGrpcServiceP\x00\x62\x06proto3'
   ,
   dependencies=[hotcat_dot_common__pb2.DESCRIPTOR,google_dot_protobuf_dot_any__pb2.DESCRIPTOR,])
 
@@ -296,6 +296,13 @@ _FLOATMINIEDITORREQUEST = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='multiLine', full_name='hotcat.panel.FloatMiniEditorRequest.multiLine', index=6,
+      number=7, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -322,9 +329,14 @@ _FLOATMINIEDITORREQUEST = _descriptor.Descriptor(
       index=2, containing_type=None,
       create_key=_descriptor._internal_create_key,
     fields=[]),
+    _descriptor.OneofDescriptor(
+      name='_multiLine', full_name='hotcat.panel.FloatMiniEditorRequest._multiLine',
+      index=3, containing_type=None,
+      create_key=_descriptor._internal_create_key,
+    fields=[]),
   ],
   serialized_start=491,
-  serialized_end=687,
+  serialized_end=725,
 )
 
 
@@ -369,8 +381,8 @@ _INPUTELEMENT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=689,
-  serialized_end=755,
+  serialized_start=727,
+  serialized_end=793,
 )
 
 
@@ -429,8 +441,8 @@ _SELECTELEMENT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=757,
-  serialized_end=853,
+  serialized_start=795,
+  serialized_end=891,
 )
 
 
@@ -482,8 +494,8 @@ _CHECKELEMENT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=855,
-  serialized_end=938,
+  serialized_start=893,
+  serialized_end=976,
 )
 
 
@@ -514,8 +526,8 @@ _FORMINFO = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=940,
-  serialized_end=989,
+  serialized_start=978,
+  serialized_end=1027,
 )
 
 
@@ -553,8 +565,8 @@ _KVPAIR = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=991,
-  serialized_end=1027,
+  serialized_start=1029,
+  serialized_end=1065,
 )
 
 _FORMREQUEST.fields_by_name['elements'].message_type = google_dot_protobuf_dot_any__pb2._ANY
@@ -579,6 +591,9 @@ _FLOATMINIEDITORREQUEST.fields_by_name['floatDefaultContent'].containing_oneof =
 _FLOATMINIEDITORREQUEST.oneofs_by_name['_callback'].fields.append(
   _FLOATMINIEDITORREQUEST.fields_by_name['callback'])
 _FLOATMINIEDITORREQUEST.fields_by_name['callback'].containing_oneof = _FLOATMINIEDITORREQUEST.oneofs_by_name['_callback']
+_FLOATMINIEDITORREQUEST.oneofs_by_name['_multiLine'].fields.append(
+  _FLOATMINIEDITORREQUEST.fields_by_name['multiLine'])
+_FLOATMINIEDITORREQUEST.fields_by_name['multiLine'].containing_oneof = _FLOATMINIEDITORREQUEST.oneofs_by_name['_multiLine']
 _FORMINFO.fields_by_name['kvPairs'].message_type = _KVPAIR
 DESCRIPTOR.message_types_by_name['BasicPanelRequest'] = _BASICPANELREQUEST
 DESCRIPTOR.message_types_by_name['SideEditorRequest'] = _SIDEEDITORREQUEST
@@ -672,8 +687,8 @@ _PANELSERVICE = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=1030,
-  serialized_end=1773,
+  serialized_start=1068,
+  serialized_end=1811,
   methods=[
   _descriptor.MethodDescriptor(
     name='showAndGet',
