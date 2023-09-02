@@ -5,9 +5,8 @@ import com.google.api.client.util.Lists;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.plugins.terminal.ShellTerminalWidget;
-import org.jetbrains.plugins.terminal.TerminalView;
 
-import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
@@ -31,14 +30,35 @@ public class TerminalUtils {
         queue.clear();
         return list;
     }
-    public static Future<List<String>> doCommandWithOutput(Project project, String terminalName, String cmd, Map<String, String> conditions) throws IOException, InterruptedException {
-        TerminalView terminalView = TerminalView.getInstance(project);
-        terminalView.getToolWindow().activate(()->{});
-        return getShellTerminalWidget(project, terminalView, terminalName, cmd, conditions);
+    public static Future<List<String>> doCommandWithOutput(Project project, String terminalName, String cmd, Map<String, String> conditions) throws Exception {
+        return getShellTerminalWidget(project, terminalName, cmd, conditions);
     }
 
-    private static Future<List<String>> getShellTerminalWidget(Project project, TerminalView terminalView, String terminalName, String cmd, Map<String, String> conditions){
-        ShellTerminalWidget widget = terminalView.createLocalShellWidget(terminalName, terminalName, true);
+    private static ShellTerminalWidget reflectGetShellTerminalWidget(Project project, String tabName) throws Exception{
+        try {
+            String clazzName = "org.jetbrains.plugins.terminal.TerminalToolWindowManager";
+            Class<?> clazz = Class.forName(clazzName);
+            //TerminalToolWindowManager windowManager = TerminalToolWindowManager.getInstance(project);
+            Method method = clazz.getMethod("getInstance", Project.class);
+            //TerminalToolWindowManager object
+            Object invoke = method.invoke(null, project);
+            //invoke.createLocalShellWidget("~", terminalName, true);
+            Method createLocalShellWidget = clazz.getMethod("createLocalShellWidget", String.class, String.class, boolean.class);
+            return (ShellTerminalWidget)createLocalShellWidget.invoke(invoke, "~", tabName, true);
+        } catch (ClassNotFoundException e) {
+            //TerminalView terminalView = TerminalView.getInstance(project);
+            //ShellTerminalWidget widget = terminalView.createLocalShellWidget(terminalName, terminalName, true);
+            String clazzName = "org.jetbrains.plugins.terminal.TerminalView";
+            Class<?> clazz = Class.forName(clazzName);
+            Method method = clazz.getMethod("getInstance", Project.class);
+            Object invoke = method.invoke(null, project);
+            Method createLocalShellWidget = clazz.getMethod("createLocalShellWidget", String.class, String.class, boolean.class);
+            return (ShellTerminalWidget)createLocalShellWidget.invoke(invoke, tabName, tabName, true);
+        }
+    }
+
+    private static Future<List<String>> getShellTerminalWidget(Project project, String terminalName, String cmd, Map<String, String> conditions) throws Exception{
+        ShellTerminalWidget widget = reflectGetShellTerminalWidget(project, terminalName);
         CompletableFuture<List<String>> future = new CompletableFuture<>();
         List<String> list = new ArrayList<>();
         cmd = cmd + "\n" + "echo EOF";
@@ -68,14 +88,13 @@ public class TerminalUtils {
         return future;
     }
 
-    public static String doCommand(Project project, String terminalName, String cmd, Map<String, String> conditions) throws IOException, InterruptedException {
-        TerminalView terminalView = TerminalView.getInstance(project);
+    public static String doCommand(Project project, String terminalName, String cmd, Map<String, String> conditions) throws Exception {
         queue.clear();
         ShellTerminalWidget widget = widgetMap.remove(terminalName);
         if (widget != null) {
             widget.dispose();
         }
-        ShellTerminalWidget shWidget = terminalView.createLocalShellWidget(terminalName, terminalName);
+        ShellTerminalWidget shWidget = reflectGetShellTerminalWidget(project, terminalName);
         widgetMap.put(terminalName, shWidget);
         StringBuilder sb = new StringBuilder();
         shWidget.addMessageFilter((s, i) -> {
