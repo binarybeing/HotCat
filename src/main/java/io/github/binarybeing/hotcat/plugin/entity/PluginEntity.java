@@ -2,6 +2,7 @@ package io.github.binarybeing.hotcat.plugin.entity;
 
 import java.io.File;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author gn.binarybei
@@ -36,5 +37,18 @@ public class PluginEntity {
 
     public void setSubMenus(List<PluginEntity> subMenus) {
         this.subMenus = subMenus;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        PluginEntity that = (PluginEntity) o;
+        return Objects.equals(name, that.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name);
     }
 }

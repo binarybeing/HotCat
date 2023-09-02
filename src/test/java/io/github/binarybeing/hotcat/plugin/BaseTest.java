@@ -1,19 +1,26 @@
 package io.github.binarybeing.hotcat.plugin;
 
 import com.google.gson.Gson;
-import io.github.binarybeing.hotcat.plugin.editor.Editor;
-import javassist.ClassPool;
+import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.CommonDataKeys;
+import com.intellij.openapi.actionSystem.DataContext;
+import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiFile;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
-import java.io.FileReader;
-import java.io.InputStream;
+import java.lang.reflect.Method;
 import java.net.URI;
+import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
@@ -29,20 +36,22 @@ public abstract class BaseTest {
     }
     private static final String basePath;
     static {
-        basePath = BaseTest.class.getClassLoader().getResource("").getPath();
+        URL url = BaseTest.class.getClassLoader().getResource("");
+        if (url != null) {
+            basePath = url.getPath();
+        } else {
+            basePath = null;
+        }
     }
     @Test
     public void test() throws Exception{
         String s = System.getenv("test.open");
-        if(!"true".equals(s)){
+        boolean expired = System.currentTimeMillis() > until();
+        if(!"true".equals(s) && expired){
             System.out.println("skip test class, set env test.open=true to open");
             return;
         }
-        Class<?> aClass = this.getTestClass();
-        if(aClass == null){
-            System.out.println("skip test class, set env test.open=true to open");
-            return;
-        }
+        Class<?> aClass = this.getClass();
 
         List<Pair<String, String >> list = new ArrayList<>();
         File[] files = new File(basePath).listFiles();
@@ -68,6 +77,55 @@ public abstract class BaseTest {
         System.out.println(resp.get("code"));
         System.out.println(resp.get("msg"));
         System.out.println(resp.get("data"));
+        verify(Double.valueOf(resp.get("code").toString()).intValue(),
+                String.valueOf(resp.get("msg")),
+                String.valueOf(resp.get("data")));
+    }
+    protected Project project;
+    protected Editor editor;
+    protected VirtualFile virtualFile;
+    protected PsiFile psiFile;
+
+    protected DataContext dataContext;
+
+    protected AnActionEvent event;
+    public Object execute(AnActionEvent event) throws Exception{
+        this.event = event;
+        project = event.getProject();
+        dataContext = event.getDataContext();
+        editor = CommonDataKeys.EDITOR.getData(dataContext);
+        psiFile = CommonDataKeys.PSI_FILE.getData(dataContext);
+        virtualFile = CommonDataKeys.VIRTUAL_FILE.getData(dataContext);
+
+        Method[] methods = this.getClass().getMethods();
+        List<Object> list = new ArrayList<>();
+        // test, wait, toString, hashCode, getClass, notify, notifyAll
+        String[] ignoreMethods = new String[]{"test", "wait", "toString", "hashCode", "getClass", "notify", "notifyAll", "until"};
+        for (Method method : methods) {
+            if (Arrays.stream(method.getAnnotations()).anyMatch(a -> Objects.equals(a.annotationType(), Override.class))) {
+                continue;
+            }
+            if (Arrays.stream(method.getAnnotations()).anyMatch(a -> Objects.equals(a.annotationType(), Ignore.class))) {
+                continue;
+            }
+            if(method.getParameterCount() > 0){
+                continue;
+            }
+            if(Arrays.stream(ignoreMethods).anyMatch(s -> s.equals(method.getName()))){
+                continue;
+            }
+            list.add(method.invoke(this));
+        }
+        return list;
+    }
+
+    public abstract Object doExecute() throws Exception;
+    public abstract void verify(int code, String msg, String data) throws Exception;
+
+    public long until() throws Exception{
+        String expireAt = "2023-08-25";
+        return new SimpleDateFormat("yyyy-MM-dd")
+                .parse(expireAt).getTime();
     }
 
     private void handleClassDependency(List<Pair<String, String >> list, String prefix, String path){

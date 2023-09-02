@@ -69,6 +69,17 @@ public class LogUtils {
         }
     }
 
+    public static void addError(Throwable exp, String log){
+        logs.add(Pair.of(System.currentTimeMillis(), log+" : "+exp.getMessage()));
+        String message = ServerException.of(exp, log).getMessage();
+        logs.add(Pair.of(System.currentTimeMillis(), message));
+        if(logs.size()>1000){
+            try {
+                logs.pollFirst();
+            } catch (Exception e) {}
+        }
+    }
+
     public static String[] getLogs(int i) {
         List<String> list = new ArrayList<>();
         while (i > 0 && !logs.isEmpty()) {

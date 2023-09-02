@@ -7,11 +7,11 @@ import io.github.binarybeing.hotcat.plugin.BaseTest;
  * @date 2023/3/24
  * @note
  */
-public class EditorTest extends BaseTest {
-
-    //@Override
-    protected Class<?> getTestClass() {
-        String s = System.getenv("test.open");
-        return "true".equals(s) ? Editor.class : null;
-    }
-}
+//public class EditorTest extends BaseTest {
+//
+//    //@Override
+//    protected Class<?> getTestClass() {
+//        String s = System.getenv("test.open");
+//        return "true".equals(s) ? Editor.class : null;
+//    }
+//}

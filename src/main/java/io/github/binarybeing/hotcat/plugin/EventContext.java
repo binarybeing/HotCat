@@ -4,11 +4,13 @@ import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.util.ActionCallback;
 import io.github.binarybeing.hotcat.plugin.action.EmptyAction;
+import io.github.binarybeing.hotcat.plugin.entity.PluginEntity;
 import io.github.binarybeing.hotcat.plugin.utils.ApplicationRunnerUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
 /**
@@ -20,17 +22,34 @@ public class EventContext {
     private static Long eventId;
 
     private static ConcurrentLinkedDeque<Pair<Long, AnActionEvent>> eventQueue = new ConcurrentLinkedDeque<>();
+    private static ConcurrentHashMap<Long, PluginEntity> pluginMap = new ConcurrentHashMap<>();
 
-    public static Long registerEvent(AnActionEvent event){
+    public static Long registerEvent(AnActionEvent event, PluginEntity plugin){
         eventId = System.currentTimeMillis() + RandomUtils.nextInt(1000, 9999);
         eventQueue.offer(Pair.of(eventId, event));
+        if (plugin != null) {
+            pluginMap.put(eventId, plugin);
+        }
         if (eventQueue.size() > 100) {
-            eventQueue.poll();
+            Pair<Long, AnActionEvent> pair = eventQueue.poll();
+            pluginMap.remove(pair.getLeft());
         }
         return eventId;
     }
     public static boolean hasEvent(){
         return eventQueue.size() > 0;
+    }
+
+    public static Long getEventId(AnActionEvent event){
+        if (event == null) {
+            return null;
+        }
+        for (Pair<Long, AnActionEvent> pair : eventQueue) {
+            if (pair.getRight() == event) {
+                return pair.getLeft();
+            }
+        }
+        return null;
     }
 
     public static AnActionEvent getEvent(Long id) throws Exception{

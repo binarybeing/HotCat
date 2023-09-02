@@ -35,7 +35,7 @@ public class InstallPluginAction extends AnAction {
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
-        EventContext.registerEvent(e);
+        EventContext.registerEvent(e, null);
         final FileChooserDescriptor descriptor = new FileChooserDescriptor(true, false,
                 true, true,
                 false, false);

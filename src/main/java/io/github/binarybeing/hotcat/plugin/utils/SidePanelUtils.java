@@ -4,17 +4,21 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.wm.*;
+import com.intellij.openapi.wm.ToolWindow;
+import com.intellij.openapi.wm.ToolWindowFactory;
+import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.ui.content.Content;
-import com.intellij.ui.content.ContentManagerEvent;
-import com.intellij.ui.content.ContentManagerListener;
+import com.intellij.ui.content.ContentManager;
 import com.intellij.ui.content.impl.ContentImpl;
-import com.intellij.util.ui.EmptyIcon;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class SidePanelUtils {
+
+    private static Map<String, Content> contentMap = new ConcurrentHashMap<>();
     public static String showSidePanel(AnActionEvent event, String panelNameId, String subTitle,
                                 JComponent jComponent, Runnable task) throws InterruptedException {
         DataContext dataContext = event.getDataContext();
@@ -23,43 +27,34 @@ public class SidePanelUtils {
             return "project not found";
         }
         ToolWindowManager instance = ToolWindowManager.getInstance(project);
-        String windowId = panelNameId;
-        ToolWindow toolWindow = instance.getToolWindow(windowId);
+        ToolWindow toolWindow = instance.getToolWindow("HotCat");
         if (toolWindow == null) {
-            RegisterToolWindowTask windowTask = RegisterToolWindowTask.lazyAndClosable(windowId, new HotCatToolWindowFactory(jComponent, subTitle), EmptyIcon.create(1), ToolWindowAnchor.RIGHT);
-            toolWindow = ToolWindowManager.getInstance(project).registerToolWindow(windowTask);
-        } else {
-            for (Content content : toolWindow.getContentManager().getContents()) {
-                toolWindow.getContentManager().removeContent(content, true);
-            }
-            toolWindow.getContentManager().addContent(new ContentImpl(jComponent, subTitle, true), 0);
+            return "toolWindow not found";
         }
-        final ToolWindow toShow = toolWindow;
-        toShow.getContentManager().addContentManagerListener(new ContentManagerListener() {
-            @Override
-            public void contentRemoved(@NotNull ContentManagerEvent event) {
-                toShow.remove();
-            }
-
-        });
-        toShow.show(task);
+        ContentManager contentManager = toolWindow.getContentManager();
+        Content managerContent = contentManager.findContent(panelNameId);
+        if (managerContent != null) {
+             contentManager.removeContent(managerContent, true);
+        }
+        Content content = new ContentImpl(jComponent, panelNameId, true);
+        contentManager.addContent(content);
+        contentManager.setSelectedContent(content);
+        toolWindow.show(task);
         return "success";
     }
     private static class HotCatToolWindowFactory implements ToolWindowFactory {
 
-        private JComponent jComponent;
+        private Content selected;
 
-        private String subTitle;
+        protected static ToolWindow toolWindow;
 
-        public HotCatToolWindowFactory(JComponent jComponent, String subTitle) {
-            this.jComponent = jComponent;
-            this.subTitle = subTitle;
+        public HotCatToolWindowFactory() {
         }
-
+        public void setComponent(String title, JComponent jComponent){
+            selected = new ContentImpl(jComponent, title, true);
+        }
         @Override
         public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
-            ContentImpl content = new ContentImpl(jComponent, subTitle, true);
-            toolWindow.getContentManager().addContent(content);
         }
 
         @Override
@@ -74,7 +69,9 @@ public class SidePanelUtils {
 
         @Override
         public void init(@NotNull ToolWindow toolWindow) {
-            LogUtils.addLog(subTitle + " inited");
+            HotCatToolWindowFactory.toolWindow = toolWindow;
+            toolWindow.setToHideOnEmptyContent(true);
+            LogUtils.addLog(toolWindow.getId() + " inited");
         }
 
     }

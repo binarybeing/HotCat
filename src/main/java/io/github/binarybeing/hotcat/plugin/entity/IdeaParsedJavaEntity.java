@@ -32,6 +32,8 @@ public class IdeaParsedJavaEntity {
 
     private Map<String, PsiExpression> selectedExpression = new HashMap<>();
 
+    private PsiElement currentPositionPsiElement;
+
     public Collection<PsiClassType> getThrowTypesOfSelectedMethod() {
         return throwTypesOfSelectedMethod;
     }
@@ -120,6 +122,14 @@ public class IdeaParsedJavaEntity {
         this.methods = methods;
     }
 
+    public PsiElement getCurrentPositionPsiElement() {
+        return currentPositionPsiElement;
+    }
+
+    public void setCurrentPositionPsiElement(PsiElement currentPositionPsiElement) {
+        this.currentPositionPsiElement = currentPositionPsiElement;
+    }
+
     public Map<String, Object> toMap(){
         Map<String, Object> map = new HashMap<>();
         if(psiClass!= null){
@@ -199,8 +209,22 @@ public class IdeaParsedJavaEntity {
         if (nameOfSelectedMethod != null){
             map.put("nameOfSelectedMethod", Map.of("text", orElse(nameOfSelectedMethod.getText(), "")));
         }
+
+        if (currentPositionPsiElement != null) {
+            map.put("currentPositionElement", extractElement(currentPositionPsiElement));
+        }
         return map;
     }
+
+    private Map<String, Object> extractElement(PsiElement currentPositionPsiElement) {
+        Map<String, Object> map = new HashMap<>(2);
+        if(currentPositionPsiElement instanceof PsiMethod){
+            map.put("type", "method");
+            map.put("data", extractMethodInfo((PsiMethod) currentPositionPsiElement));
+        }
+        return map;
+    }
+
     private<T> T orElse(T value, T other) {
         return value != null ? value : other;
     }

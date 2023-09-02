@@ -3,6 +3,7 @@ package io.github.binarybeing.hotcat.plugin.server.controller;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import io.github.binarybeing.hotcat.plugin.EventContext;
 import io.github.binarybeing.hotcat.plugin.server.ServerException;
+import io.github.binarybeing.hotcat.plugin.server.dto.FutureResponse;
 import io.github.binarybeing.hotcat.plugin.server.dto.Request;
 import io.github.binarybeing.hotcat.plugin.server.dto.Response;
 import io.github.binarybeing.hotcat.plugin.utils.ApplicationRunnerUtils;
@@ -10,6 +11,9 @@ import io.github.binarybeing.hotcat.plugin.utils.JsonUtils;
 import io.github.binarybeing.hotcat.plugin.utils.LogUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author gn.binarybei
@@ -35,7 +39,12 @@ public abstract class BaseEventScriptController extends AbstractController{
             }
             LogUtils.addEventLogs(eventId,"handleRequest: " + request);
             LogUtils.addLog("handleRequest: " + request);
-            return ApplicationRunnerUtils.run(() -> handle(request, event, script));
+            Response runRsp = ApplicationRunnerUtils.run(() -> handle(request, event, script));
+            if(runRsp.getData() instanceof Future){
+                Future data = (Future) runRsp.getData();
+                runRsp.setData(data.get(10, TimeUnit.SECONDS));
+            }
+            return runRsp;
         } catch (Exception e) {
             LogUtils.addError(e, "handleRequest error: " + request);
             return Response.error(ServerException.of(e,  "handleRequest error").getMessage());

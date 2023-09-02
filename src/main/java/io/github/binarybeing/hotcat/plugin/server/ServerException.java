@@ -6,13 +6,13 @@ package io.github.binarybeing.hotcat.plugin.server;
  * @note
  */
 public class ServerException extends Exception{
-    private Exception e;
+    private Throwable e;
     private String msg;
-    private ServerException(Exception e, String msg){
+    private ServerException(Throwable e, String msg){
         this.e = e;
         this.msg = msg;
     }
-    public static ServerException of(Exception e, String msg){
+    public static ServerException of(Throwable e, String msg){
         return new ServerException(e, msg);
     }
 

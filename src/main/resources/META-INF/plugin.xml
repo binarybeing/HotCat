@@ -57,6 +57,14 @@
     <depends>com.intellij.modules.java</depends>
     <depends>org.jetbrains.plugins.terminal</depends>
     <depends>org.intellij.plugins.markdown</depends>
+    <extensions defaultExtensionNs="com.intellij">
+        <toolWindow factoryClass="io.github.binarybeing.hotcat.plugin.utils.SidePanelUtils$HotCatToolWindowFactory"
+                    id="HotCat" anchor="right" canCloseContents="true"
+                    doNotActivateOnStart="true">
+        </toolWindow>
+    </extensions>
+
+
 
     <extensions defaultExtensionNs="org.intellij.markdown">
         <browserPreviewExtensionProvider implementation="io.github.binarybeing.hotcat.plugin.infra.ExUrlOpenerProvider"/>

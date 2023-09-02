@@ -8,16 +8,19 @@ import com.intellij.openapi.editor.markup.TextAttributes;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.JBColor;
+import io.github.binarybeing.hotcat.plugin.BaseTest;
+
+import java.text.SimpleDateFormat;
 
 /**
  * @author gn.binarybei
  * @date 2023/3/24
  * @note
  */
-public class Editor {
+public class Editor extends BaseTest{
 
-    public String getSelectText(AnActionEvent event) throws InterruptedException {
-
+    @Override
+    public Object doExecute() throws Exception {
         DataContext dataContext = event.getDataContext();
 
         com.intellij.openapi.editor.Editor editor = CommonDataKeys.EDITOR.getData(dataContext);
@@ -34,7 +37,16 @@ public class Editor {
         }
         TextAttributes attributes = new TextAttributes(null, JBColor.CYAN, JBColor.BLUE, EffectType.BOLD_DOTTED_LINE, 0);
         editor.getMarkupModel().addLineHighlighter(2, 0, attributes);
-        return "success";
-        //return editor.getSelectionModel().getSelectedText().toUpperCase(Locale.ROOT);
+        return "你好20210";
+    }
+
+    @Override
+    public void verify(int code, String msg, String data) throws Exception {
+        assert data.contains("你好20210");
+    }
+
+    @Override
+    public long until() throws Exception {
+        return new SimpleDateFormat("yyyy-MM-dd").parse("2023-08-30").getTime();
     }
 }

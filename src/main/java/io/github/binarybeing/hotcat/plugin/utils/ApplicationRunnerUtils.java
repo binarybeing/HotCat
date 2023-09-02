@@ -11,10 +11,30 @@ import java.util.concurrent.Semaphore;
  * @note
  */
 public class ApplicationRunnerUtils {
+    public static void runWithNoException(Runnable callable) {
+        try {
+            run(()->{
+                callable.run();
+                return null;
+            });
+        } catch (Exception e) {
+            LogUtils.addError(e, "ApplicationRunnerUtils runWithNoException error");
+        }
+    }
+
+    public static <T>  T runWithNoException(Callable<T> callable) {
+        try {
+            return run(callable);
+        } catch (Exception e) {
+            LogUtils.addError(e, "ApplicationRunnerUtils runWithNoException error");
+            return null;
+        }
+    }
 
     public static <T>  T run(Callable<T> callable) throws Exception {
         Semaphore semaphore = new Semaphore(0);
         final Object[] res = new Object[2];
+//        ApplicationManager.getApplication().invokeLater();
 
         ApplicationManager.getApplication().invokeLater(()->{
             try {

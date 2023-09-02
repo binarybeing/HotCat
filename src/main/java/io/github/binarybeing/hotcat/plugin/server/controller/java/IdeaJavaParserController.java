@@ -66,6 +66,13 @@ public class IdeaJavaParserController extends BaseEventScriptController {
             return null;
         }
 
+        public boolean isSelectingJavaFile(){
+            DataContext context = event.getDataContext();
+            PsiFile file = CommonDataKeys.PSI_FILE.getData(context);
+            return file instanceof PsiJavaFile;
+        }
+
+
         public String getSelectedMethodModel() {
             DataContext context = event.getDataContext();
             VirtualFile virtualFile = CommonDataKeys.VIRTUAL_FILE.getData(context);

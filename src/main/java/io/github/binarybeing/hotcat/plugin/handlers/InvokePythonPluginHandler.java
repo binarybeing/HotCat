@@ -9,10 +9,11 @@ import io.github.binarybeing.hotcat.plugin.utils.LogUtils;
 import io.github.binarybeing.hotcat.plugin.utils.PluginFileUtils;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.concurrent.*;
 
 /**
@@ -21,6 +22,7 @@ import java.util.concurrent.*;
  * @note
  */
 public class InvokePythonPluginHandler implements IdeaEventHandler {
+
 
     private static ConcurrentLinkedDeque<String> cmds = new ConcurrentLinkedDeque<>();
 
@@ -37,7 +39,7 @@ public class InvokePythonPluginHandler implements IdeaEventHandler {
 
     @Override
     public void handle(PluginEntity plugin, AnActionEvent event) throws Exception {
-        Long eventId = EventContext.registerEvent(event);
+        Long eventId = EventContext.registerEvent(event, plugin);
         String absolutePath = plugin.getFile().getAbsolutePath();
         String cmd = "python3 '" + absolutePath + "' " + Server.INSTANCE.getPort() + " " + eventId + " '" + absolutePath+"'";
         cmds.addFirst(cmd);
@@ -52,7 +54,24 @@ public class InvokePythonPluginHandler implements IdeaEventHandler {
 
         Process process = builder.start();
 
-        handOutPut(plugin, process);
+        handOutPut(plugin.getName(), process);
+    }
+
+    @Override
+    public void callback(Long eventId, String resp, String callbackPath) {
+        String cmd = "python3 '" + callbackPath + "' " + Server.INSTANCE.getPort() + " " + eventId + " '" + callbackPath +"' '" + resp+ "'";
+        LogUtils.addLog("Runtime execute cmd: " + cmd);
+        String cmdPath = PluginFileUtils.getPluginDirName()+"/shell_runner.sh";
+        ProcessBuilder builder = new ProcessBuilder("sh", cmdPath,
+                callbackPath , String.valueOf(Server.INSTANCE.getPort()), String.valueOf(eventId), resp);
+        builder.redirectErrorStream(true);
+        try {
+            Process process = builder.start();
+            handOutPut(callbackPath, process);
+        } catch (Exception e) {
+            LogUtils.addError(e, "response error: " + e.getMessage());
+        }
+
     }
 
     @Override
@@ -60,14 +79,14 @@ public class InvokePythonPluginHandler implements IdeaEventHandler {
         throw new RuntimeException("unsupported method");
     }
 
-    private void handOutPut(PluginEntity plugin, Process process){
+    private void handOutPut(String name, Process process){
 
         executorService.submit(()->{
             try (InputStream inputStream = process.getInputStream()) {
                 byte[] bytes = new byte[10240];
                 int len;
                 while ((len=inputStream.read(bytes)) != -1) {
-                    LogUtils.addLog(plugin.getName() + " output: " + new String(bytes, 0, len));
+                    LogUtils.addLog(name + " output: " + new String(bytes, 0, len));
                 }
             } catch (Exception e) {
                 LogUtils.addError(e, "handOutPut error: " + e.getMessage());

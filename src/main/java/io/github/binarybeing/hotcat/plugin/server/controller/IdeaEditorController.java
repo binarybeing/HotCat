@@ -33,10 +33,6 @@ public class IdeaEditorController extends BaseEventScriptController {
         if (project == null) {
             return Response.error("project not found");
         }
-        VirtualFile virtualFile = CommonDataKeys.VIRTUAL_FILE.getData(dataContext);
-        if (virtualFile == null) {
-            return Response.error("virtualFile not found");
-        }
 
         JexlExpression expression = super.jexlEngine.createExpression(script);
         MapContext context = new MapContext();

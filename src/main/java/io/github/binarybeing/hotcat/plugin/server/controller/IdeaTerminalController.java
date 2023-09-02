@@ -2,6 +2,7 @@ package io.github.binarybeing.hotcat.plugin.server.controller;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
+import io.github.binarybeing.hotcat.plugin.server.dto.FutureResponse;
 import io.github.binarybeing.hotcat.plugin.server.dto.Request;
 import io.github.binarybeing.hotcat.plugin.server.dto.Response;
 import io.github.binarybeing.hotcat.plugin.utils.LogUtils;
@@ -13,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Future;
 
 /**
  * @author gn.binarybei
@@ -82,7 +84,7 @@ public class IdeaTerminalController extends BaseEventScriptController {
             }
         }
 
-        public List<String> startAndGetResult() throws Exception {
+        public Future<List<String>> startAndGetResult() throws Exception {
             Project project = event.getProject();
             try {
                 return TerminalUtils.doCommandWithOutput(project, tab, script, conditions);

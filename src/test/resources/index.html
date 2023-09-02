@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <title>title</title>
+    <style>
+        body {
+            /*居中*/
+            margin: auto 10px;
+            align-content: center;
+        }
+    </style>
+</head>
+<body>
+<h1>你好，世界！</h1>
+
+<form onsubmit="alert()">
+    <label for="name">姓名<input type="text" id="name" name="name" placeholder="请输入姓名"/></label>
+    <br/>
+    <input type="text" id="age" name="age" placeholder="请输入年龄">
+    <br/>
+    <button type="button" id="submit" onclick="do_alert()">提交</button>
+</form>
+
+<script>
+    function do_alert() {
+        alert("提交成功！");
+    }
+</script>
+</body>
+<script src="https://cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js" integrity="sha384-nvAa0+6Qg9clwYCGGPpDQLVpLNn0fRaROjHqs13t4Ggj3Ez50XnGQqc/r8MhnRDZ" crossorigin="anonymous"></script>
+</html>

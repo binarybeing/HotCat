@@ -12,6 +12,7 @@ import org.apache.commons.jexl3.MapContext;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.*;
 
 /**
@@ -67,6 +68,10 @@ public class IdeaDynamicJavaController extends BaseEventScriptController{
                 Class<?> executeClass = hotCatClassLoader.classes.get(className);
                 Method[] classMethods = executeClass.getMethods();
                 for (Method method : classMethods) {
+                    // 非abstract方法
+                    if (Modifier.isAbstract(method.getModifiers())) {
+                        continue;
+                    }
                     if (method.getParameterTypes().length == 1
                             && method.getParameterTypes()[0].getName().equals(AnActionEvent.class.getName())) {
                         invokeRes.add(invokeMethod(executeClass, method));

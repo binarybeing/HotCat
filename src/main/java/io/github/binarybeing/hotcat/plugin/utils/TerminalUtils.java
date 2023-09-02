@@ -1,27 +1,17 @@
 package io.github.binarybeing.hotcat.plugin.utils;
 
 
-import com.intellij.openapi.application.ApplicationManager;
+import com.google.api.client.util.Lists;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.intellij.terminal.JBTerminalWidgetListener;
-import com.jediterm.terminal.*;
-import com.jediterm.terminal.model.CharBuffer;
-import com.jediterm.terminal.model.LinesBuffer;
-import com.jediterm.terminal.model.TerminalTextBuffer;
-import com.jediterm.terminal.ui.TerminalPanelListener;
-import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.plugins.terminal.AbstractTerminalRunner;
 import org.jetbrains.plugins.terminal.ShellTerminalWidget;
-import org.jetbrains.plugins.terminal.TerminalProcessOptions;
 import org.jetbrains.plugins.terminal.TerminalView;
 
-import java.io.*;
-import java.nio.charset.StandardCharsets;
+import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.Semaphore;
 
 /**
  * @author gn.binarybei
@@ -41,46 +31,23 @@ public class TerminalUtils {
         queue.clear();
         return list;
     }
-    public static List<String> doCommandWithOutput(Project project, String terminalName, String cmd, Map<String, String> conditions) throws IOException, InterruptedException {
+    public static Future<List<String>> doCommandWithOutput(Project project, String terminalName, String cmd, Map<String, String> conditions) throws IOException, InterruptedException {
         TerminalView terminalView = TerminalView.getInstance(project);
-        final List<String> output = new ArrayList<>();
-        ShellTerminalWidget runningWidget = getShellTerminalWidget(terminalView, terminalName, cmd, conditions);
-        if (runningWidget == null) {
-            return Collections.emptyList();
-        }
-        TtyConnector connector = runningWidget.getTtyConnector();
-        while (connector == null) {
-            connector = runningWidget.getTtyConnector();
-            Thread.sleep(500L);
-        }
-        while (runningWidget.hasRunningCommands()) {
-            Thread.sleep(100L);
-        }
-        TerminalTextBuffer textBuffer = runningWidget.getTerminalTextBuffer();
-        LinesBuffer historyBuffer = textBuffer.getHistoryBuffer();
-        for (int i = 0; i < historyBuffer.getLineCount(); i++) {
-            String s = historyBuffer.getLineText(i);
-            if (StringUtils.isNotBlank(s)) {
-                output.add(s.replaceAll("\\ue000", ""));
-            }
-        }
-        for(int i = 0; i < textBuffer.getScreenLinesCount(); i++) {
-            String s = textBuffer.getLine(i).getText();
-            if (StringUtils.isNotBlank(s)) {
-                output.add(s.replaceAll("\\ue000", ""));
-            }
-        }
-        return output;
-
+        terminalView.getToolWindow().activate(()->{});
+        return getShellTerminalWidget(project, terminalView, terminalName, cmd, conditions);
     }
 
-    private static ShellTerminalWidget getShellTerminalWidget(TerminalView terminalView, String terminalName, String cmd, Map<String, String> conditions){
-        AbstractTerminalRunner<?> runner = terminalView.getTerminalRunner();
+    private static Future<List<String>> getShellTerminalWidget(Project project, TerminalView terminalView, String terminalName, String cmd, Map<String, String> conditions){
         ShellTerminalWidget widget = terminalView.createLocalShellWidget(terminalName, terminalName, true);
-        //Process process = runner.createProcess(new TerminalProcessOptions(null, null, null), widget);
-        //widget.
-
+        CompletableFuture<List<String>> future = new CompletableFuture<>();
+        List<String> list = new ArrayList<>();
+        cmd = cmd + "\n" + "echo EOF";
         widget.addMessageFilter((s, i)->{
+            if(Objects.equals(s, "EOF")){
+                future.complete(list);
+                return null;
+            }
+            list.add(s);
             for (Map.Entry<String, String> entry : conditions.entrySet()) {
                 if (s.startsWith(entry.getKey())) {
                     try {
@@ -94,11 +61,11 @@ public class TerminalUtils {
         });
         try {
             widget.executeCommand(cmd);
-            return widget;
         } catch (Exception e) {
             LogUtils.addLog("executeCommand error " + cmd + " " + e.getMessage());
-            return null;
+            future.complete(Lists.newArrayList());
         }
+        return future;
     }
 
     public static String doCommand(Project project, String terminalName, String cmd, Map<String, String> conditions) throws IOException, InterruptedException {

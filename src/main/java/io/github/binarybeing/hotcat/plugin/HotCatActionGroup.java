@@ -32,8 +32,6 @@ public class HotCatActionGroup extends ActionGroup {
     private static Server server;
     private static boolean setShellRunner = false;
 
-
-
     static {
         try {
             server = Server.INSTANCE;
@@ -41,11 +39,14 @@ public class HotCatActionGroup extends ActionGroup {
         } catch (Exception e) {
             server = null;
         }
+        try {
+//            GrpcServerConfig.INSTANCE.start();
+        }catch (Exception e) {
+            LogUtils.addLog("grpc server start failed: " + e.getMessage());
+        }
     }
 
     public HotCatActionGroup() {
-
-
     }
 
     @Override

@@ -15,7 +15,7 @@ public class EmptyAction extends AnAction{
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
-        EventContext.registerEvent(e);
+        EventContext.registerEvent(e, null);
         this.event = e;
     }
 
