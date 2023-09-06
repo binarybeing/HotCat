@@ -44,6 +44,12 @@ public class IdeaTerminalController extends BaseEventScriptController {
 
         private String tab;
 
+        private boolean useExist = false;
+
+        private boolean visible = true;
+
+        private boolean execute = true;
+
         private Map<String, String> conditions = new HashMap<>();
 
         private AnActionEvent event;
@@ -60,12 +66,27 @@ public class IdeaTerminalController extends BaseEventScriptController {
             return this;
         }
 
+        public Terminal useExist(){
+            this.useExist = true;
+            return this;
+        }
+
         public String getTab() {
             return tab;
         }
 
         public Terminal setTab(String tab) {
             this.tab = tab;
+            return this;
+        }
+
+        public Terminal setVisible(boolean visible) {
+            this.visible = visible;
+            return this;
+        }
+
+        public Terminal setExecute(boolean execute) {
+            this.execute = execute;
             return this;
         }
 
@@ -77,7 +98,7 @@ public class IdeaTerminalController extends BaseEventScriptController {
         public String start() throws Exception{
             Project project = event.getProject();
             try {
-                return TerminalUtils.doCommand(project, tab, script, conditions);
+                return TerminalUtils.doCommand(project, tab, script, conditions, useExist, visible, execute);
             } catch (Exception e) {
                 LogUtils.addLog("terminal error, " + e.getMessage());
                 throw e;

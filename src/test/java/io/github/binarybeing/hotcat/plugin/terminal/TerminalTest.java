@@ -1,5 +1,7 @@
 package io.github.binarybeing.hotcat.plugin.terminal;
 
+import com.intellij.openapi.module.Module;
+import com.intellij.openapi.module.ModuleManager;
 import io.github.binarybeing.hotcat.plugin.BaseTest;
 
 import java.text.SimpleDateFormat;
@@ -35,6 +37,10 @@ public class TerminalTest extends BaseTest {
 
     @Override
     public Object doExecute() throws Exception {
+        Module[] modules = ModuleManager.getInstance(super.project).getModules();
+        for (Module module : modules) {
+
+        }
         return null;
     }
 

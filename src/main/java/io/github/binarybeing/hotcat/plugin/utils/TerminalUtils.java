@@ -4,11 +4,17 @@ package io.github.binarybeing.hotcat.plugin.utils;
 import com.google.api.client.util.Lists;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.wm.ToolWindowManager;
+import com.intellij.util.Consumer;
+import com.jediterm.terminal.TtyConnector;
 import org.jetbrains.plugins.terminal.ShellTerminalWidget;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -21,7 +27,7 @@ public class TerminalUtils {
 
     private static final Logger LOG = Logger.getInstance(TerminalUtils.class);
 
-    private static final Map<String, ShellTerminalWidget> widgetMap = new HashMap<>();
+    private static final Map<String, ShellTerminalWidget> widgetMap = new ConcurrentHashMap<>();
 
     private static final Queue<String> queue = new LinkedBlockingQueue<>();
 
@@ -88,13 +94,29 @@ public class TerminalUtils {
         return future;
     }
 
-    public static String doCommand(Project project, String terminalName, String cmd, Map<String, String> conditions) throws Exception {
+    public static String doCommand(Project project, String terminalName, String cmd,
+                                   Map<String, String> conditions, boolean useExist,
+                                   boolean visible, boolean execute) throws Exception {
         queue.clear();
         ShellTerminalWidget widget = widgetMap.remove(terminalName);
-        if (widget != null) {
-            widget.dispose();
+        ShellTerminalWidget shWidget = null;
+        if (useExist && widget !=null) {
+            shWidget = widget;
         }
-        ShellTerminalWidget shWidget = reflectGetShellTerminalWidget(project, terminalName);
+        if (useExist && widget == null){
+            shWidget = reflectGetShellTerminalWidget(project, terminalName);
+        }
+        if(!useExist && widget != null){
+            widget.dispose();
+            shWidget = reflectGetShellTerminalWidget(project, terminalName);
+        }
+        if(!useExist && widget == null){
+            shWidget = reflectGetShellTerminalWidget(project, terminalName);
+        }
+        if (visible) {
+            shWidget.grabFocus();
+        }
+        shWidget.setVisible(visible);
         widgetMap.put(terminalName, shWidget);
         StringBuilder sb = new StringBuilder();
         shWidget.addMessageFilter((s, i) -> {
@@ -105,7 +127,7 @@ public class TerminalUtils {
                 if (s.startsWith(entry.getKey())) {
                     LOG.info("widgetSecond new line =" + s);
                     try {
-                        shWidget.executeCommand(entry.getValue());
+                        widgetMap.get(terminalName).executeCommand(entry.getValue());
                     } catch (Exception e) {
                         LogUtils.addLog("executeCommand error " + entry.getValue() + " " + e.getMessage());
                     }
@@ -116,8 +138,17 @@ public class TerminalUtils {
         });
 
         try {
-            shWidget.executeCommand(cmd);
-
+            if (execute) {
+                shWidget.executeCommand(cmd);
+            } else {
+                shWidget.executeWithTtyConnector(ttyConnector -> {
+                    try {
+                        ttyConnector.write(cmd.getBytes(StandardCharsets.UTF_8));
+                    } catch (IOException e) {
+                        LogUtils.addError(e, "executeCommand error " + cmd + " " + e.getMessage());
+                    }
+                });
+            }
             return sb.toString();
         } catch (Exception e) {
             LogUtils.addLog("executeCommand error " + cmd + " " + e.getMessage());

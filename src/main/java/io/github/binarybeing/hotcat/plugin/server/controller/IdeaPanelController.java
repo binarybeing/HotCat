@@ -384,7 +384,7 @@ public class IdeaPanelController extends BaseEventScriptController {
                             if (StringUtils.isNoneBlank(callbackEngine)) {
                                 invokePythonPluginHandler.callback(eventId, new Gson().toJson(map), callbackEngine);
                             }
-                            LogUtils.addLog("on close popup: data map=" + map);
+                            LogUtils.addLog("on close popup: data map=" + new Gson().toJson(map));
                         }
                         @Override
                         public void beforeShown(@NotNull LightweightWindowEvent event) {}

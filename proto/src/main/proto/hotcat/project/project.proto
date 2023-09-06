@@ -54,6 +54,7 @@ message Content{
     string text = 1;
     optional TextSelectModel selectModel = 2;
 }
+
 message TextSelectModel{
     optional string text = 1;
     int32 start = 2;

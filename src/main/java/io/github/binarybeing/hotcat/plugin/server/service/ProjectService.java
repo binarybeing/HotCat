@@ -8,17 +8,20 @@ import com.intellij.openapi.editor.SelectionModel;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectUtil;
+import com.intellij.openapi.roots.ModuleFileIndex;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.vfs.VirtualFile;
+import io.github.binarybeing.hotcat.plugin.dto.project.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.Assert;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class ProjectService {
     private AnActionEvent event;
@@ -37,6 +40,80 @@ public class ProjectService {
         return project.getBasePath();
     }
 
+    public ProjectDto currentInfo(){
+        VirtualFile virtualFile = CommonDataKeys.VIRTUAL_FILE.getData(event.getDataContext());
+        Editor editor = CommonDataKeys.EDITOR.getData(event.getDataContext());
+        Assert.assertNotNull("no file or dir selected", virtualFile);
+
+        List<ProjectModule> modules = new ArrayList<>();
+        for (Module pModule : ModuleManager.getInstance(project).getModules()) {
+            ProjectModule projectModule = new ProjectModule();
+            projectModule.setName(pModule.getName());
+            VirtualFile pModuleDir = ProjectUtil.guessModuleDir(pModule);
+            projectModule.setPath(pModuleDir == null ? "" : pModuleDir.getPath());
+            modules.add(projectModule);
+        }
+        ProjectModule currentModule = null;
+        Module module = ProjectFileIndex.SERVICE.getInstance(project).getModuleForFile(virtualFile);
+        if (module != null) {
+            VirtualFile moduleDir = ProjectUtil.guessModuleDir(module);
+            currentModule = new ProjectModule();
+            currentModule.setName(module.getName());
+            currentModule.setPath(moduleDir == null ? "" : moduleDir.getPath());
+        }
+        ProjectDirectory projectDirectory = null;
+        ProjectFile projectFile = null;
+
+        if (virtualFile.isDirectory()) {
+            projectDirectory = new ProjectDirectory();
+            projectDirectory.setName(virtualFile.getName());
+            projectDirectory.setPath(virtualFile.getPath());
+            List<ProjectFile> projectFileList = FileUtils.listFiles(new File(virtualFile.getPath()), null, false)
+                    .stream().filter(File::isFile).map(f -> {
+                        ProjectFile file = new ProjectFile();
+                        file.setPath(f.getPath());
+                        file.setName(f.getName());
+                        return file;
+                    }).collect(Collectors.toList());
+            List<ProjectDirectory> projectDirList = FileUtils.listFiles(new File(virtualFile.getPath()), null, false)
+                    .stream().filter(File::isDirectory).map(f -> {
+                        ProjectDirectory file = new ProjectDirectory();
+                        file.setPath(f.getPath());
+                        file.setName(f.getName());
+                        return file;
+                    }).collect(Collectors.toList());
+            projectDirectory.setProjectFiles(projectFileList);
+            projectDirectory.setDirectories(projectDirList);
+
+        } else {
+            projectFile = new ProjectFile();
+            projectFile.setName(virtualFile.getName());
+            projectFile.setPath(virtualFile.getPath());
+        }
+        EditorContent editorContent = null;
+        if (!virtualFile.isDirectory() && editor != null) {
+            editorContent = new EditorContent();
+            editorContent.setText(editor.getDocument().getText());
+            TextSelectModel model = new TextSelectModel();
+            model.setText(editor.getSelectionModel().getSelectedText());
+            model.setStart(editor.getSelectionModel().getSelectionStart());
+            model.setEnd(editor.getSelectionModel().getSelectionEnd());
+
+            model.setLine(Objects.requireNonNull(editor.getSelectionModel().getSelectionStartPosition()).line);
+            editorContent.setSelectModel(model);
+        }
+        ProjectDto ans = new ProjectDto();
+        VirtualFile projectDir = ProjectUtil.guessProjectDir(project);
+        ans.setPath(projectDir == null ? "" : projectDir.getPath());
+        ans.setName(project.getName());
+        ans.setModules(modules);
+        ans.setCurrent(currentModule);
+        ans.setCurrentDirectory(projectDirectory);
+        ans.setCurrentFile(projectFile);
+        ans.setEditorContent(editorContent);
+        return ans;
+    }
+
 
     public IdeaProjectGrpcService.CurrentModule getCurrentModule() throws IOException {
         IdeaProjectGrpcService.CurrentModule.Builder builder = IdeaProjectGrpcService.CurrentModule.newBuilder();
@@ -49,10 +126,11 @@ public class ProjectService {
             module = ArrayUtils.isEmpty(modules) ? null : modules[0];
         }
         Assert.assertNotNull("no module found", module);
-        ModuleRootManager manager = ModuleRootManager.getInstance(modules[0]);
+        ModuleRootManager manager = ModuleRootManager.getInstance(module);
+
         builder.setModule(IdeaProjectGrpcService.Module.newBuilder()
-                .setName(modules[0].getName())
-                .setPath(manager.getContentRoots()[0].getPath())
+                .setName(module.getName())
+                .setPath(ProjectUtil.guessModuleDir(module).getPath())
                 .build());
         String content = "";
         if (!virtualFile.isDirectory()) {
