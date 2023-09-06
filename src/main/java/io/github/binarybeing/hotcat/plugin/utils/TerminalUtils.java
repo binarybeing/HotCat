@@ -1,15 +1,11 @@
 package io.github.binarybeing.hotcat.plugin.utils;
 
 
-import com.google.api.client.util.Lists;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.wm.ToolWindowManager;
-import com.intellij.util.Consumer;
-import com.jediterm.terminal.TtyConnector;
 import org.jetbrains.plugins.terminal.ShellTerminalWidget;
+import org.junit.Assert;
 
-import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -89,7 +85,7 @@ public class TerminalUtils {
             widget.executeCommand(cmd);
         } catch (Exception e) {
             LogUtils.addLog("executeCommand error " + cmd + " " + e.getMessage());
-            future.complete(Lists.newArrayList());
+            future.complete(new ArrayList<>());
         }
         return future;
     }
@@ -141,13 +137,9 @@ public class TerminalUtils {
             if (execute) {
                 shWidget.executeCommand(cmd);
             } else {
-                shWidget.executeWithTtyConnector(ttyConnector -> {
-                    try {
-                        ttyConnector.write(cmd.getBytes(StandardCharsets.UTF_8));
-                    } catch (IOException e) {
-                        LogUtils.addError(e, "executeCommand error " + cmd + " " + e.getMessage());
-                    }
-                });
+
+                Assert.assertNotNull("shWidget.getTtyConnector() is null", shWidget.getTtyConnector());
+                shWidget.getTtyConnector().write(cmd.getBytes(StandardCharsets.UTF_8));
             }
             return sb.toString();
         } catch (Exception e) {

@@ -4,8 +4,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import com.intellij.icons.AllIcons;
-import com.intellij.ide.browsers.actions.WebPreviewEditorProvider;
-import com.intellij.ide.browsers.actions.WebPreviewVirtualFile;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.actionSystem.DataContext;
@@ -39,10 +37,7 @@ import io.github.binarybeing.hotcat.plugin.EventContext;
 import io.github.binarybeing.hotcat.plugin.handlers.InvokePythonPluginHandler;
 import io.github.binarybeing.hotcat.plugin.server.dto.Request;
 import io.github.binarybeing.hotcat.plugin.server.dto.Response;
-import io.github.binarybeing.hotcat.plugin.utils.DialogUtils;
-import io.github.binarybeing.hotcat.plugin.utils.JavaParseUtils;
-import io.github.binarybeing.hotcat.plugin.utils.LogUtils;
-import io.github.binarybeing.hotcat.plugin.utils.SidePanelUtils;
+import io.github.binarybeing.hotcat.plugin.utils.*;
 import org.apache.commons.jexl3.JexlExpression;
 import org.apache.commons.jexl3.MapContext;
 import org.apache.commons.lang3.ArrayUtils;
@@ -304,13 +299,19 @@ public class IdeaPanelController extends BaseEventScriptController {
             return "success";
         }
 
-        public String showSidePanelWebBrowser(String url) throws Exception{
-            WebPreviewVirtualFile virtualFile = new WebPreviewVirtualFile(event.getProject().getProjectFile(),  Urls.newFromEncoded(url));
-            WebPreviewEditorProvider editorProvider = FileEditorProvider.EP_FILE_EDITOR_PROVIDER.findExtension(WebPreviewEditorProvider.class);
-            assert editorProvider != null;
-            FileEditor fileEditor = editorProvider.createEditor(event.getProject(), virtualFile);
-            SidePanelUtils.showSidePanel(event, "testHtml", "", fileEditor.getComponent(), () -> {});
-            return "success";
+        public String showSidePanelWebBrowser(String panelName, String url) throws Exception{
+            VirtualFile virtualFile = WebPreviewVirtualFileUtils.create(event.getProject().getProjectFile(),  Urls.newFromEncoded(url));
+            try {
+                Class<FileEditorProvider> clazz = (Class<FileEditorProvider>) Class.forName("com.intellij.ide.browsers.actions.WebPreviewEditorProvider");
+                FileEditorProvider editorProvider = FileEditorProvider.EP_FILE_EDITOR_PROVIDER.findExtension(clazz);
+                assert editorProvider != null;
+                FileEditor fileEditor = editorProvider.createEditor(event.getProject(), virtualFile);
+                SidePanelUtils.showSidePanel(event, panelName, "", fileEditor.getComponent(), () -> {
+                });
+                return "success";
+            } catch (Exception e) {
+                throw new RuntimeException("Unsupported Feature, Please Update Idea Version");
+            }
         }
 
         public String showFloatMiniEditor(String title, String fromFile, int line,

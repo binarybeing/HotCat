@@ -58,20 +58,10 @@ public class SidePanelUtils {
         }
 
         @Override
-        public boolean isApplicable(@NotNull Project project) {
-            return ToolWindowFactory.super.isApplicable(project);
-        }
-
-        @Override
-        public boolean shouldBeAvailable(@NotNull Project project) {
-            return ToolWindowFactory.super.shouldBeAvailable(project);
-        }
-
-        @Override
         public void init(@NotNull ToolWindow toolWindow) {
             HotCatToolWindowFactory.toolWindow = toolWindow;
             toolWindow.setToHideOnEmptyContent(true);
-            LogUtils.addLog(toolWindow.getId() + " inited");
+            LogUtils.addLog(toolWindow.getTitle() + " inited");
         }
 
     }

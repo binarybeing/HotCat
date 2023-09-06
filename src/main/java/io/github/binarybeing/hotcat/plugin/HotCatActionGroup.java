@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -56,7 +57,14 @@ public class HotCatActionGroup extends ActionGroup {
         IdeaEventHandler handler = new InvokePythonPluginHandler();
         List<AnAction> list = new ArrayList<>(getPlugins(pluginEntities, handler, "HotCat"));
         list.add(new InstallPluginAction());
-        super.setSearchable(true);
+        try {
+            Method method = this.getClass().getMethod("setSearchable", boolean.class);
+            method.invoke(this, true);
+        } catch (NoSuchMethodException exception) {
+            LogUtils.addLog("can not set searchable because idea version problem: " + exception.getMessage());
+        } catch (Exception exception) {
+            LogUtils.addLog("setSearchable error: " + exception.getMessage());
+        }
         return list.toArray(new AnAction[0]);
         //return null;
     }

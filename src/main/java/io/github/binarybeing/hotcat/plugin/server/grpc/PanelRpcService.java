@@ -226,7 +226,7 @@ public class PanelRpcService extends PanelServiceGrpc.PanelServiceImplBase {
             AnActionEvent event = EventContext.getEvent(eventId);
             Assert.assertNotNull(event);
             String url = request.getParam();
-            String s = new IdeaPanelController.IdeaPanel(event).showSidePanelWebBrowser(url);
+            String s = new IdeaPanelController.IdeaPanel(event).showSidePanelWebBrowser("browser", url);
             resp.setCode(20000);
             resp.setData(s);
         } catch (Exception e) {

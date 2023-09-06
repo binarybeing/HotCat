@@ -87,4 +87,5 @@ after click confirm button, you can see `echo hello` running in the IDEA termina
 
 This IDEA plugin is an orginal version, only few interfaces are complished, and maybe some bugs here. let me know if something troubled you. 
 
+[test](class://java.lang.String)
 

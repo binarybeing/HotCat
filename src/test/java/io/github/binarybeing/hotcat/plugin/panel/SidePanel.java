@@ -1,5 +1,6 @@
 package io.github.binarybeing.hotcat.plugin.panel;
 
+import com.intellij.ide.browsers.UrlOpener;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.actionSystem.DataContext;
@@ -28,15 +29,19 @@ public class SidePanel extends BaseTest {
 //        return new IdeaPanelController
 //                .IdeaPanel(event)
 //                .showSidePanelEditor("test2", "/Users/momo/plugin_projects/HotCat/src/test/java/io/github/binarybeing/hotcat/plugin/panel/BasicPanel.java");
-        JPanel jPanel = new JPanel();
-        jPanel.add(new JLabel("lable"));
-        JBCheckBox jCheckBox = new JBCheckBox();
-        jCheckBox.setName("check_name");
-        jCheckBox.setText("check_text");
-        jCheckBox.setSelected(true);
-        jPanel.add(jCheckBox);
+        UrlOpener extension = UrlOpener.EP_NAME.findExtension(UrlOpener.class);
+
+        return extension.getClass().getName();
+
+//        JPanel jPanel = new JPanel();
+//        jPanel.add(new JLabel("lable"));
+//        JBCheckBox jCheckBox = new JBCheckBox();
+//        jCheckBox.setName("check_name");
+//        jCheckBox.setText("check_text");
+//        jCheckBox.setSelected(true);
+//        jPanel.add(jCheckBox);
 //        DialogUtils.showPanelDialog(event, "ceshi", jPanel);
-        return jCheckBox.isSelected();
+//        return jCheckBox.isSelected();
 
     }
 
@@ -48,7 +53,7 @@ public class SidePanel extends BaseTest {
     @Override
     public long until() throws Exception {
         return new SimpleDateFormat("yyyy-MM-dd")
-                .parse("2023-08-30").getTime();
+                .parse("2023-09-07").getTime();
     }
 
     //    public String showTestSplitEditor(AnActionEvent event) throws InterruptedException {

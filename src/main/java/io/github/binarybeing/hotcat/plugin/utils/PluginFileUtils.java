@@ -3,13 +3,18 @@ package io.github.binarybeing.hotcat.plugin.utils;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.intellij.util.io.Decompressor;
 import com.intellij.util.io.ZipUtil;
 import io.github.binarybeing.hotcat.plugin.entity.PluginEntity;
+import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.zip.signer.zip.ZipUtils;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -21,6 +26,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
+ *
+ * https://www.baidu.com
+ *
  * @author gn.binarybei
  * @date 2022/9/23
  * @note
@@ -121,7 +129,9 @@ public class PluginFileUtils {
                 return null;
             }
             File tempDir = new File(pluginHome, "temp");
-            ZipUtil.extract(Path.of(file.toURI()), Path.of(tempDir.toURI()), null, true);
+            Class<ZipUtil> aClass = ZipUtil.class;
+            Method method = aClass.getMethod("extract", File.class, File.class, FilenameFilter.class, boolean.class);
+            method.invoke(null, file, tempDir, null, true);
             File[] files = tempDir.listFiles();
             if (files == null || files.length == 0) {
                 LogUtils.addLog("unzip plugin fail, plugin dir has no file : " + tempDir.getAbsolutePath());

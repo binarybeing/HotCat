@@ -64,11 +64,8 @@
         </toolWindow>
     </extensions>
 
-
-
-    <extensions defaultExtensionNs="org.intellij.markdown">
-        <browserPreviewExtensionProvider implementation="io.github.binarybeing.hotcat.plugin.infra.ExUrlOpenerProvider"/>
-<!--        <extension -->
+    <extensions defaultExtensionNs="org.jetbrains">
+        <urlOpener implementation="io.github.binarybeing.hotcat.plugin.infra.MarkDownUrlOpener" />
     </extensions>
 
 
