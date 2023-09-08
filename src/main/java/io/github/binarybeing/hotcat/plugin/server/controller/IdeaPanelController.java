@@ -246,8 +246,6 @@ public class IdeaPanelController extends BaseEventScriptController {
                         inputInfo.put(field, String.valueOf(checkbox.isSelected()));
                     }
                 }
-            }else{
-                throw new RuntimeException("cancel");
             }
             return inputInfo;
         }
