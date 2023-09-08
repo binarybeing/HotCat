@@ -54,12 +54,19 @@ public class EventContext {
 
     public static AnActionEvent getEvent(Long id) throws Exception{
         if (id == 999999999L) {
-            ApplicationRunnerUtils.run(() ->{
+            AnActionEvent evt = ApplicationRunnerUtils.run(() -> {
                 EmptyAction emptyAction = new EmptyAction();
-                ActionCallback callback = ActionManager.getInstance().tryToExecute(emptyAction, null, null, null, true);
-                callback.waitFor(5 * 1000L);
-                return emptyAction.getEvent();
+                try {
+                    ActionCallback callback = ActionManager.getInstance().tryToExecute(emptyAction, null, null, null, true);
+                    callback.waitFor(5 * 1000L);
+                    return emptyAction.getEvent();
+                } catch (Throwable e) {
+                    return null;
+                }
             });
+            if (evt != null) {
+                return evt;
+            }
             if(eventQueue.size() > 0){
                 return eventQueue.getLast().getRight();
             }
