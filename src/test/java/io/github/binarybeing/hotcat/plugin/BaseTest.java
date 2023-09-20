@@ -7,6 +7,7 @@ import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -86,6 +87,8 @@ public abstract class BaseTest {
     protected VirtualFile virtualFile;
     protected PsiFile psiFile;
 
+    protected PsiElement psiElement;
+
     protected DataContext dataContext;
 
     protected AnActionEvent event;
@@ -96,6 +99,7 @@ public abstract class BaseTest {
         editor = CommonDataKeys.EDITOR.getData(dataContext);
         psiFile = CommonDataKeys.PSI_FILE.getData(dataContext);
         virtualFile = CommonDataKeys.VIRTUAL_FILE.getData(dataContext);
+        psiElement = CommonDataKeys.PSI_ELEMENT.getData(dataContext);
 
         Method[] methods = this.getClass().getMethods();
         List<Object> list = new ArrayList<>();
