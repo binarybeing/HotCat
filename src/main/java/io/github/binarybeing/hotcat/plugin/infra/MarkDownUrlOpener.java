@@ -17,6 +17,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Objects;
+
+import static java.util.Objects.requireNonNull;
+
 public class MarkDownUrlOpener extends UrlOpener {
 
     @Override
@@ -34,11 +38,14 @@ public class MarkDownUrlOpener extends UrlOpener {
         if (project == null || FileEditorManager.getInstance(project).getSelectedEditor() == null) {
             return true;
         }
-        VirtualFile file = FileEditorManager.getInstance(project).getSelectedEditor().getFile();;
+        VirtualFile file = requireNonNull(FileEditorManager.getInstance(project).getSelectedEditor()).getFile();
         if (file == null) {
             return true;
         }
+
+        // ftp://www.baidu.com
         String prefix = "class://";
+        String ex = "ht:clz:java.lang.String";
         if (!url.startsWith(prefix)) {
             return true;
         }

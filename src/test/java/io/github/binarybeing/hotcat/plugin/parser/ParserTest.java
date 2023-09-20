@@ -5,9 +5,13 @@ import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.psi.PsiElement;
 import io.github.binarybeing.hotcat.plugin.BaseTest;
 import org.apache.commons.lang3.RandomUtils;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Random;
 
 public class ParserTest extends BaseTest {
@@ -41,13 +45,24 @@ public class ParserTest extends BaseTest {
 
 
     public Object doExecute() throws Exception {
+        HashMap<String, Object> map = new HashMap<String, Object>();
         // com.intellij.psi.impl.compiled.ClsClassImpl
         int i = RandomUtils.nextInt();
 
         PsiElement element = CommonDataKeys.PSI_ELEMENT.getData(event.getDataContext());
 
         String parentClass = element.getParent()==null?"":element.getParent().getClass().toString();
-        return parentClass + "     " + element.getClass().toString();
+
+        return toString(element).toString();
+    }
+
+    private List<String> toString(PsiElement element) {
+        List<String> list = new ArrayList<>();
+        list.add(element.getClass().getName() + " " + element.getText()+"\n");
+        for (PsiElement child : element.getChildren()) {
+            list.addAll(toString(child) );
+        }
+        return list;
     }
 
 //    @Override
@@ -62,7 +77,7 @@ public class ParserTest extends BaseTest {
 
     @Override
     public long until() throws Exception {
-        String expireAt = "2023-08-31";
+        String expireAt = "2023-09-31";
         return new SimpleDateFormat("yyyy-MM-dd")
                 .parse(expireAt).getTime();
     }

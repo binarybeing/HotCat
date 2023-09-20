@@ -1,15 +1,9 @@
 package io.github.binarybeing.hotcat.plugin.utils;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.intellij.util.io.Decompressor;
 import com.intellij.util.io.ZipUtil;
 import io.github.binarybeing.hotcat.plugin.entity.PluginEntity;
-import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.zip.signer.zip.ZipUtils;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -18,7 +12,6 @@ import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;

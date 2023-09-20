@@ -16,7 +16,7 @@ dependencies {
     implementation("io.github.binarybeing.hotcat:porto:1.0-SNAPSHOT")
 }
 group = "io.github.binarybeing.hotcat"
-version = "1.3.5.213223.4"
+version = "1.3.6.193231.0"
 
 repositories {
     mavenCentral()
@@ -27,7 +27,7 @@ repositories {
 
 // Configure Gradle IntelliJ Plugin - read more: https://github.com/JetBrains/gradle-intellij-plugin
 intellij {
-    version.set("2022.1")
+    version.set("2022.3")
     //version.set("2021.3")
     type.set("IU") //// Target IDE Platform
 
@@ -43,7 +43,7 @@ tasks {
 
     patchPluginXml {
         sinceBuild.set("193.0")
-        untilBuild.set("223.*")
+        untilBuild.set("231.*")
     }
 
     signPlugin {

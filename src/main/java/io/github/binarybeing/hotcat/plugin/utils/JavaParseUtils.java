@@ -162,8 +162,10 @@ public class JavaParseUtils {
         }
 
         if (element instanceof PsiModifierList
+                || element instanceof PsiReferenceParameterList
                 || element instanceof PsiKeyword
-                || element instanceof PsiJavaToken && ";".equals(element.getText())) {
+                || element instanceof PsiJavaToken && ";".equals(element.getText())
+                ) {
             return "";
         }
 
