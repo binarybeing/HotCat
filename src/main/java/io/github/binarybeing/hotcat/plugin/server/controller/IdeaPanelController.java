@@ -462,7 +462,6 @@ public class IdeaPanelController extends BaseEventScriptController {
                                     jTextField.setText(value);
                                     newRes.put(field, jTextField);
                                     if (Objects.equals(fieldName, field)) {
-                                        jTextField.getDocument().insertString(offset, "", null);
                                         toFocus = jTextField;
                                     }
                                     item.add(jTextField);
@@ -523,7 +522,7 @@ public class IdeaPanelController extends BaseEventScriptController {
                     toFocus.grabFocus();
                     if (toFocus instanceof JTextField) {
                         JTextField textField = (JTextField) toFocus;
-                        textField.setCaretPosition(offset + 1);
+                        textField.setCaretPosition(Math.min(offset + 1, textField.getCaretPosition()));
                     }
                 }
                 formInfo = newRes;
