@@ -35,6 +35,12 @@
 
     <change-notes>
         <![CDATA[
+            <h3>Version 1.3.6.193231.1</h3>
+            <ul>
+                <li>dynamic panel</li>
+                <li>row support in panel</li>
+                <li>add password input type</li>
+            </ul>
             <h3>Version 1.3.6.193231.0</h3>
             <ul>
                 <li>float editor</li>
@@ -63,8 +69,15 @@
     <depends>org.jetbrains.plugins.terminal</depends>
     <depends>org.intellij.plugins.markdown</depends>
     <extensions defaultExtensionNs="com.intellij">
-        <psi.referenceContributor language=""
-                                  implementation="io.github.binarybeing.hotcat.plugin.infra.reference.HotCatPsiReferenceContributor"/>
+<!--        <psi.referenceContributor language=""-->
+<!--                                  implementation="io.github.binarybeing.hotcat.plugin.infra.reference.HotCatPsiReferenceContributor"/>-->
+
+<!--        <psi.referenceContributor language=""-->
+<!--                                  implementation="io.github.binarybeing.hotcat.plugin.infra.completion.CompletionPsiReferenceContributor"/>-->
+
+<!--        <completion.contributor language="JAVA"-->
+<!--                                implementationClass="io.github.binarybeing.hotcat.plugin.infra.completion.HotCatCompletionContributor"-->
+<!--                                order="first"/>-->
 
         <toolWindow factoryClass="io.github.binarybeing.hotcat.plugin.utils.SidePanelUtils$HotCatToolWindowFactory"
                     id="HotCat" anchor="right" canCloseContents="true"

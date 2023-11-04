@@ -2,7 +2,8 @@ package io.github.binarybeing.hotcat.plugin.server.controller;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.gson.Gson;
+import com.google.gson.*;
+import com.google.gson.reflect.TypeToken;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
@@ -34,6 +35,7 @@ import com.intellij.xdebugger.impl.XSourcePositionImpl;
 import com.intellij.xdebugger.impl.breakpoints.XExpressionImpl;
 import com.intellij.xdebugger.impl.ui.XDebuggerExpressionEditor;
 import io.github.binarybeing.hotcat.plugin.EventContext;
+import io.github.binarybeing.hotcat.plugin.entity.PluginEntity;
 import io.github.binarybeing.hotcat.plugin.handlers.InvokePythonPluginHandler;
 import io.github.binarybeing.hotcat.plugin.server.dto.Request;
 import io.github.binarybeing.hotcat.plugin.server.dto.Response;
@@ -41,17 +43,23 @@ import io.github.binarybeing.hotcat.plugin.utils.*;
 import org.apache.commons.jexl3.JexlExpression;
 import org.apache.commons.jexl3.MapContext;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.RandomUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.java.debugger.JavaDebuggerEditorsProvider;
 import org.junit.Assert;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.KeyEvent;
 import java.io.File;
+import java.lang.reflect.Type;
+import java.net.URL;
 import java.util.List;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -79,20 +87,25 @@ public class IdeaPanelController extends BaseEventScriptController {
     }
 
     public static class IdeaPanel {
-        private final JPanel jPanel;
+
+        private JPanel jPanel;
+        private JPanel row;
 
         private final AnActionEvent event;
 
         private String title;
 
-        private final HashMap<String, JComponent> res = new HashMap<>();
+        private HashMap<String, JComponent> formInfo = new LinkedHashMap<>();
+        private HashMap<String, String> labelsMap = new LinkedHashMap<>();
+        private Set<String> callbackWhenUpdateSet = new HashSet<>();
+        private List<List<String>> rowsInfo = new ArrayList<>();
 
         public IdeaPanel(AnActionEvent event) {
             this.jPanel = new JPanel();
             Dimension dimension = new Dimension();
-
             jPanel.setSize(dimension);
             this.jPanel.setLayout(new BoxLayout(this.jPanel, BoxLayout.Y_AXIS));
+
             this.event = event;
         }
 
@@ -100,23 +113,165 @@ public class IdeaPanelController extends BaseEventScriptController {
             this.title = title;
             return this;
         }
+        public IdeaPanel rowGroupStart(){
+            rowGroupEnd();
+            row = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            return this;
+        }
+        public IdeaPanel rowGroupEnd(){
+            if (row != null) {
+                rowsInfo.add(rowInfo(row));
+                jPanel.add(row);
+                row = null;
+            }
+            return this;
+        }
+        private JPanel newRow() {
+            return new JPanel(new FlowLayout(FlowLayout.LEFT));
+        }
+        private JPanel newLabeledItem(int row, int col) {
+            return new JPanel(new GridLayout(row, col));
+        }
+
+        private void finishRow(JPanel targetRow) {
+            if (targetRow != row) {
+                rowsInfo.add(this.rowInfo(targetRow));
+                jPanel.add(targetRow);
+            }
+        }
+
+        private List<String> rowInfo(JPanel targetRow){
+            List<String> list = new ArrayList<>();
+            for (Component component : targetRow.getComponents()) {
+                //find inner item
+                if (component instanceof JPanel) {
+                    JPanel panel = (JPanel) component;
+                    for (Component innerComponent : panel.getComponents()) {
+                        Optional<Map.Entry<String, JComponent>> first = formInfo.entrySet().stream()
+                                .filter(e -> innerComponent == e.getValue())
+                                .findFirst();
+                        first.ifPresent(e->{
+                            list.add(e.getKey());
+                        });
+                    }
+                }
+
+            }
+            return list;
+        }
+        private DocumentListener formChangedListener(String fieldName) {
+            return new DocumentListener() {
+                @Override
+                public void insertUpdate(DocumentEvent e) {
+                    onFormChanged(fieldName, e.getOffset());
+                }
+                @Override
+                public void removeUpdate(DocumentEvent e) {
+                    onFormChanged(fieldName, e.getOffset());
+                }
+
+                @Override
+                public void changedUpdate(DocumentEvent e) {
+                    onFormChanged(fieldName, e.getOffset());
+                }
+            };
+        }
+
+        private void onFormChanged(String fieldName, int offset){
+            if (!callbackWhenUpdateSet.contains(fieldName)) {
+                return;
+            }
+
+            Long eventId = EventContext.getEventId(event);
+            InvokePythonPluginHandler invokePythonPluginHandler = new InvokePythonPluginHandler();
+            List<Map<String, Map<String, Object>>> formInfoMap = this.extraFormInfo(this.formInfo);
+            Map<String, Object> map = new HashMap<>(4);
+            map.put("change_field", fieldName);
+            map.put("new_form_data", formInfoMap);
+            map.put("panel_id", String.valueOf(eventId));
+            map.put("event_time", System.currentTimeMillis());
+            Optional<PluginEntity> plugin = EventContext.getPluginEntity(EventContext.getEventId(event));
+            plugin.ifPresent(p->{
+                String parent = p.getFile().getPath();
+                if (p.getFile().isFile()) {
+                    parent = p.getFile().getParent();
+                }
+                if (!parent.endsWith("/")) {
+                    parent += "/";
+                }
+
+                String callPath = parent + "callback.py";
+                try {
+                    jPanel.removeAll();
+                    URL url = new File(PluginFileUtils.getPluginDirName()+"/loading.gif").toURI().toURL();
+                    Icon myImgIcon = new ImageIcon(url);
+                    JLabel imageLbl = new JLabel(myImgIcon);
+                    jPanel.add(imageLbl);
+                    jPanel.setLayout(new BorderLayout());
+                    jPanel.add(imageLbl, BorderLayout.CENTER);
+
+                    CompletableFuture<String> future = invokePythonPluginHandler.actionCallback(eventId, "form_updated", new Gson().toJson(map), callPath);
+                    future.thenAccept(s->{
+                        EventQueue.invokeLater(()->{
+                            if (StringUtils.isBlank(s)) {
+                                return;
+                            }
+                            updateForm(fieldName, offset, s);
+                        });
+                    });
+                } catch (Exception e) {
+                    LogUtils.addError(e, "call callPath timeout");
+                }
+
+            });
+        }
+
 
         public IdeaPanel showInput(String label, String field, String defaultValue) {
             JLabel jLabel = new JLabel(label);
-            jLabel.setHorizontalAlignment(SwingConstants.RIGHT);
-            jPanel.add(jLabel);
+            formInfo.put("label:" + RandomUtils.nextInt(0, Integer.MAX_VALUE), jLabel);
+
+            JPanel targetRow = row != null ? row : newRow();
+            JPanel item = this.newLabeledItem(2, 1);
+            item.add(jLabel);
             if (StringUtils.isNotEmpty(field)) {
                 JTextField jTextField = new JTextField(15);
                 jTextField.setText(defaultValue);
-                jLabel.setLabelFor(jTextField);
-                jPanel.add(jTextField);
-                res.put(field, jTextField);
+                labelsMap.put(field, label);
+                item.add(jTextField);
+                formInfo.put(field, jTextField);
+                jTextField.getDocument().addDocumentListener(this.formChangedListener(field));
             }
+            targetRow.add(item);
+            this.finishRow(targetRow);
+            return this;
+        }
+        public IdeaPanel showPassword(String label, String field, String defaultValue) {
+            JLabel jLabel = new JLabel(label);
+            formInfo.put("label:" + RandomUtils.nextInt(0, Integer.MAX_VALUE), jLabel);
+            JPanel targetRow = row != null ? row : newRow();
+            JPanel item = this.newLabeledItem(2, 1);
+            item.add(jLabel);
+            if (StringUtils.isNotEmpty(field)) {
+                JPasswordField passwordField = new JPasswordField(15);
+                passwordField.setText(defaultValue);
+//                jLabel.setLabelFor(passwordField);
+                labelsMap.put(field, label);
+                item.add(passwordField);
+                formInfo.put(field, passwordField);
+                passwordField.getDocument().addDocumentListener(this.formChangedListener(field));
+            }
+            targetRow.add(item);
+            this.finishRow(targetRow);
             return this;
         }
 
         public IdeaPanel showSelect(String label, String field, String[] names, String[] values, String defaultValue) {
-            jPanel.add(new JLabel(label));
+            JLabel jLabel = new JLabel(label);
+            formInfo.put("label:" + RandomUtils.nextInt(0, Integer.MAX_VALUE), jLabel);
+            JPanel targetRow = row != null ? row : newRow();
+            JPanel item = this.newLabeledItem(2, 1);
+            item.add(jLabel);
             if (names == null || values == null || names.length != values.length) {
                 throw new RuntimeException("names and values must be not null and length must be equal");
             }
@@ -137,41 +292,68 @@ public class IdeaPanelController extends BaseEventScriptController {
             if (defaultItem != null) {
                 box.setSelectedItem(defaultItem);
             }
-            jPanel.add(box);
-            res.put(field, box);
+            box.addItemListener(e -> onFormChanged(field, -1));
+            item.add(box);
+            targetRow.add(item);
+            formInfo.put(field, box);
+            this.finishRow(targetRow);
             return this;
         }
 
         public IdeaPanel showSelect(String label, String field, String[] options, String defaultValue) {
-            jPanel.add(new JLabel(label));
+            
+            JLabel jLabel = new JLabel(label);
+            formInfo.put("label:" + RandomUtils.nextInt(0, Integer.MAX_VALUE), jLabel);
+            JPanel targetRow = row != null ? row : newRow();
+
+            JPanel item = this.newLabeledItem(2, 1);
+            item.add(jLabel);
+            
             ComboBox<String> box = new ComboBox<>(options);
             if (StringUtils.isNotEmpty(defaultValue)) {
                 box.setSelectedItem(defaultValue);
             }
-            jPanel.add(box);
-            res.put(field, box);
+            box.addItemListener(e -> onFormChanged(field, -1));
+            item.add(box);
+            targetRow.add(item);
+            formInfo.put(field, box);
+            this.finishRow(targetRow);
             return this;
         }
 
         public IdeaPanel showCheck(String label, String value, String field, boolean checked) {
-            jPanel.add(new JLabel(label));
+            JLabel jLabel = new JLabel(label);
+            formInfo.put("label:" + RandomUtils.nextInt(0, Integer.MAX_VALUE), jLabel);
+            JPanel targetRow = row != null ? row : newRow();
+            JPanel item = this.newLabeledItem(2, 1);
+            item.add(jLabel);
             JBCheckBox jCheckBox = new JBCheckBox();
             jCheckBox.setName(field);
             jCheckBox.setText(value);
             jCheckBox.setSelected(checked);
-            jPanel.add(jCheckBox);
-            res.put(field, jCheckBox);
+            jCheckBox.addItemListener(e -> onFormChanged(field, -1));
+            item.add(jCheckBox);
+            targetRow.add(item);
+            formInfo.put(field, jCheckBox);
+            this.finishRow(targetRow);
             return this;
         }
 
         public IdeaPanel showCheck(String label, String[] optionArr) {
-            jPanel.add(new JLabel(label));
+            JLabel jLabel = new JLabel(label);
+            formInfo.put("label:" + RandomUtils.nextInt(0, Integer.MAX_VALUE), jLabel);
+            JPanel targetRow = row != null ? row : newRow();
+            JPanel item = this.newLabeledItem(2, 1);
+            item.add(jLabel);
             List<String> optionList = Arrays.asList(optionArr);
             optionList.forEach(option -> {
                 JCheckBox jCheckBox = new JCheckBox(option);
-                jPanel.add(jCheckBox);
-                res.put(option, jCheckBox);
+                jCheckBox.addItemListener(e -> onFormChanged(option, -1));
+                item.add(jCheckBox);
+                formInfo.put(option, jCheckBox);
             });
+            targetRow.add(item);
+            this.finishRow(targetRow);
             return this;
         }
 
@@ -218,6 +400,11 @@ public class IdeaPanelController extends BaseEventScriptController {
             return this;
         }
 
+        public IdeaPanel callbackWhenUpdate(String fieldName){
+            callbackWhenUpdateSet.add(fieldName);
+            return this;
+        }
+
         public Map<String, String> showAndGet(){
             return showAndGet(jPanel.getWidth());
         }
@@ -225,26 +412,237 @@ public class IdeaPanelController extends BaseEventScriptController {
         public Map<String, String> showAndGet(int width){
             jPanel.setSize(width, jPanel.getHeight());
             boolean ok = DialogUtils.showPanelDialog(event, title, jPanel);
-            Map<String,String> inputInfo = new HashMap<>(4);
             if (ok) {
-                for (Map.Entry<String, JComponent> entry : res.entrySet()) {
-                    String field = entry.getKey();
-                    JComponent component = entry.getValue();
-                    if (component instanceof JTextField) {
+                return extraInputInfo(formInfo);
+            }
+            return Collections.emptyMap();
+        }
+        private void updateForm(String fieldName, int offset, String jsonString) {
+            try {
+                HashMap<String, JComponent> newRes = new LinkedHashMap<>();
+                Set<String> newCallbackWhenUpdateSet = new HashSet<>();
+                List<List<String>> newRowsInfo = new ArrayList<>();
+                List<JPanel> rowsPanel = new ArrayList<>();
+                JsonElement jsonElement = JsonParser.parseString(jsonString);
+                JsonArray jsonArray = jsonElement.getAsJsonArray();
+                JComponent toFocus = null;
+                for (JsonElement ele : jsonArray) {
+                    JsonObject jsonObject = ele.getAsJsonObject();
+                    ArrayList<String> rowInfo = new ArrayList<>();
+                    JPanel newRow = new JPanel(new FlowLayout(FlowLayout.LEFT));
+                    for (Map.Entry<String, JsonElement> entry : jsonObject.entrySet()) {
+                        String field = entry.getKey();
+                        rowInfo.add(field);
+
+                        JsonElement element = entry.getValue();
+                        JsonObject info = element.getAsJsonObject();
+                        String type = info.get("type").getAsString();
+                        String value = info.get("value").getAsString();
+                        boolean callback = info.get("callback").getAsBoolean();
+                        if (callback) {
+                            newCallbackWhenUpdateSet.add(field);
+                        }
+                        Type valuesType = new TypeToken<ArrayList<String>>() {}.getType();
+                        ArrayList<String> values = new Gson().fromJson(info.get("values"), valuesType);
+                        if (type != null) {
+                            switch (type) {
+                                case "password":
+                                    JPasswordField passwordField = new JPasswordField(15);
+                                    passwordField.setText(value);
+                                    newRes.put(field, passwordField);
+                                    newRow.add(passwordField);
+                                    if (Objects.equals(fieldName, field)) {
+                                        passwordField.getDocument().insertString(offset, "", null);
+                                        toFocus = passwordField;
+                                    }
+                                    break;
+                                case "input":
+                                    JTextField jTextField = new JTextField(15);
+                                    jTextField.setText(value);
+                                    newRes.put(field, jTextField);
+                                    if (Objects.equals(fieldName, field)) {
+                                        jTextField.getDocument().insertString(offset, "", null);
+                                        toFocus = jTextField;
+                                    }
+                                    newRow.add(jTextField);
+                                    break;
+                                case "select":
+                                    ComboBox<String> comboBox = new ComboBox<>();
+                                    for (String s : values) {
+                                        comboBox.addItem(s);
+                                    }
+                                    comboBox.setSelectedItem(value);
+                                    newRes.put(field, comboBox);
+                                    if (Objects.equals(fieldName, field)) {
+                                        toFocus = comboBox;
+                                    }
+                                    newRow.add(comboBox);
+                                    break;
+                                case "check":
+                                    JBCheckBox checkbox = new JBCheckBox();
+                                    checkbox.setName(field);
+                                    checkbox.setText(values.get(0));
+                                    if (StringUtils.isNotBlank(value)) {
+                                        checkbox.setSelected(true);
+                                    }
+                                    newRes.put(field, checkbox);
+                                    if (Objects.equals(fieldName, field)) {
+                                        toFocus = checkbox;
+                                    }
+                                    newRow.add(checkbox);
+                                    break;
+                                case "label":
+                                    JLabel label = new JLabel(value);
+                                    newRes.put(field, label);
+                                    newRow.add(label);
+                                    break;
+                                default:
+                                    LogUtils.addLog("not support form type:" + type);
+                            }
+                        }
+                    }
+                    newRowsInfo.add(rowInfo);
+                    rowsPanel.add(newRow);
+                }
+
+
+                jPanel.removeAll();
+                for (JPanel newRow : rowsPanel) {
+                    jPanel.add(newRow);
+                }
+
+                jPanel.setLayout(new BoxLayout(this.jPanel, BoxLayout.Y_AXIS));
+                jPanel.setSize(jPanel.getWidth(), 0);
+
+                if (toFocus != null) {
+                    toFocus.grabFocus();
+                    if (toFocus instanceof JTextField) {
+                        JTextField textField = (JTextField) toFocus;
+                        textField.setCaretPosition(offset + 1);
+                    }
+                }
+                formInfo = newRes;
+                callbackWhenUpdateSet = newCallbackWhenUpdateSet;
+                rowsInfo = newRowsInfo;
+                addListener();
+
+            } catch (Exception e) {
+                LogUtils.addError(e, "updateForm error， json=" + jsonString);
+            }
+        }
+
+        private void addListener() {
+            for (Map.Entry<String, JComponent> entry : formInfo.entrySet()) {
+                JComponent component = entry.getValue();
+                String fieldName = entry.getKey();
+                if (component instanceof JTextField) {
+                    JTextField field = (JTextField) component;
+                    field.getDocument().addDocumentListener(this.formChangedListener(fieldName));
+                }
+                if (component instanceof ComboBox) {
+                    ComboBox box = (ComboBox) component;
+                    box.addItemListener(e -> onFormChanged(fieldName, -1));
+                }
+                if (component instanceof JCheckBox) {
+                    JCheckBox box = (JCheckBox) component;
+                    box.addItemListener(e -> onFormChanged(fieldName, -1));
+                }
+
+
+            }
+
+        }
+
+
+        private List<Map<String, Map<String, Object>>> extraFormInfo(Map<String, JComponent> panelRes) {
+            List<Map<String, Map<String, Object>>> formInfoList = new ArrayList<>();
+            for (List<String> rowFields : rowsInfo) {
+                Map<String, Map<String, Object>> rowsInfoMap = new LinkedHashMap<>(4);
+                for (String field : rowFields) {
+                    Map<String, Object> map = new HashMap<>();
+                    JComponent component = panelRes.get(field);
+                    map.put("callback", callbackWhenUpdateSet.contains(field));
+                    if (component instanceof JPasswordField) {
+                        JPasswordField passwordField = (JPasswordField) component;
+                        String password = new String(passwordField.getPassword());
+                        map.put("type", "password");
+                        map.put("value", password);
+                        map.put("values", new String[]{password});
+                        rowsInfoMap.put(field, map);
+                    }else if (component instanceof JTextField) {
                         JTextField jTextField = (JTextField) component;
-                        inputInfo.put(field, jTextField.getText());
+                        map.put("type", "input");
+                        map.put("value", jTextField.getText());
+                        map.put("values", new String[]{jTextField.getText()});
+                        rowsInfoMap.put(field, map);
                     } else if (component instanceof ComboBox) {
-                        Object item = ((ComboBox<?>) component).getSelectedItem();
+                        ComboBox<?> comboBox = (ComboBox<?>) component;
+                        map.put("type", "select");
+                        Object item = comboBox.getSelectedItem();
                         if(item instanceof SelectItem){
                             SelectItem selectItem = (SelectItem) item;
-                            inputInfo.put(field, selectItem.getValue());
+                            map.put("value", selectItem.getValue());
                         }else{
-                            inputInfo.put(field, String.valueOf(item));
+                            map.put("value", String.valueOf(item));
                         }
+                        int startIdx = 0;
+                        List<String> list = new ArrayList<>();
+                        while (comboBox.getItemAt(startIdx) != null) {
+                            Object item1 = comboBox.getItemAt(startIdx);
+                            if(item1 instanceof SelectItem){
+                                SelectItem selectItem = (SelectItem) item1;
+                                list.add(selectItem.getValue());
+                            }else{
+                                list.add(String.valueOf(item1));
+                            }
+                            startIdx++;
+                        }
+                        map.put("values", list.toArray(new String[0]));
+                        rowsInfoMap.put(field, map);
                     } else if (component instanceof JCheckBox) {
                         JCheckBox checkbox = (JCheckBox) component;
-                        inputInfo.put(field, String.valueOf(checkbox.isSelected()));
+                        String text = checkbox.getText();
+                        map.put("type", "check");
+                        map.put("value", checkbox.isSelected() ? text : "");
+                        map.put("values", new String[]{text});
+                        rowsInfoMap.put(field, map);
+                    } else if (component instanceof JLabel) {
+                        JLabel jLabel = (JLabel) component;
+                        map.put("type", "label");
+                        map.put("value", jLabel.getText());
+                        map.put("values", new String[]{jLabel.getText()});
+                        rowsInfoMap.put(field, map);
                     }
+                }
+                if (!rowsInfoMap.isEmpty()) {
+                    formInfoList.add(rowsInfoMap);
+                }
+            }
+            return formInfoList;
+        }
+
+        private Map<String, String> extraInputInfo(Map<String, JComponent> panelRes) {
+            Map<String, String> inputInfo = new LinkedHashMap<>(4);
+            for (Map.Entry<String, JComponent> entry : panelRes.entrySet()) {
+                String field = entry.getKey();
+                JComponent component = entry.getValue();
+                if (component instanceof JPasswordField) {
+                    JPasswordField passwordField = (JPasswordField) component;
+                    inputInfo.put(field, new String(passwordField.getPassword()));
+                }else if (component instanceof JTextField) {
+                    JTextField jTextField = (JTextField) component;
+                    inputInfo.put(field, jTextField.getText());
+                } else if (component instanceof ComboBox) {
+                    Object item = ((ComboBox<?>) component).getSelectedItem();
+                    if(item instanceof SelectItem){
+                        SelectItem selectItem = (SelectItem) item;
+                        inputInfo.put(field, selectItem.getValue());
+                    }else{
+                        inputInfo.put(field, String.valueOf(item));
+                    }
+                } else if (component instanceof JCheckBox) {
+                    JCheckBox checkbox = (JCheckBox) component;
+                    inputInfo.put(field, String.valueOf(checkbox.isSelected()));
                 }
             }
             return inputInfo;

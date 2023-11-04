@@ -1,19 +1,20 @@
 package io.github.binarybeing.hotcat.plugin.handlers;
 
+import com.google.gson.Gson;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import io.github.binarybeing.hotcat.plugin.EventContext;
 import io.github.binarybeing.hotcat.plugin.IdeaEventHandler;
 import io.github.binarybeing.hotcat.plugin.entity.PluginEntity;
 import io.github.binarybeing.hotcat.plugin.server.Server;
+import io.github.binarybeing.hotcat.plugin.utils.HttpClientUtils;
 import io.github.binarybeing.hotcat.plugin.utils.LogUtils;
 import io.github.binarybeing.hotcat.plugin.utils.PluginFileUtils;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.File;
 import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Objects;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 import java.util.concurrent.*;
 
 /**
@@ -55,6 +56,28 @@ public class InvokePythonPluginHandler implements IdeaEventHandler {
         Process process = builder.start();
 
         handOutPut(plugin.getName(), process);
+    }
+
+    @Override
+    public CompletableFuture<String> actionCallback(Long eventId, String action, String data, String callbackPath) {
+        try {
+            File file = new File(callbackPath);
+            if (!file.exists()) {
+                LogUtils.addLog("no callback file found: " + callbackPath);
+                return CompletableFuture.failedFuture(new RuntimeException("no callback file found"));
+            }
+            Map<String, Object> map = new HashMap<>();
+            map.put("action", action);
+            map.put("data", new String(Base64.getEncoder().encode(data.getBytes(StandardCharsets.UTF_8))));
+            String json = new Gson().toJson(map);
+
+            String cmd = String.format("python3 '%s' '%s'  '%s'  '%s' '%s'", callbackPath, Server.INSTANCE.getPort(), eventId, callbackPath, json);
+            cmd = new String(Base64.getEncoder().encode(cmd.getBytes(StandardCharsets.UTF_8)));
+            return HttpClientUtils.get("http://localhost:17022/" + cmd);
+        } catch (Exception e) {
+            LogUtils.addError(e, "callback file error: " + callbackPath);
+            return CompletableFuture.failedFuture(e);
+        }
     }
 
     @Override

@@ -1,12 +1,8 @@
 package io.github.binarybeing.hotcat.plugin.infra.reference;
 
-import com.intellij.openapi.module.Module;
-import com.intellij.openapi.module.ModuleUtil;
+import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiLiteralExpression;
 import com.intellij.psi.PsiReferenceBase;
-import com.intellij.psi.impl.file.impl.JavaFileManager;
-import com.intellij.psi.search.GlobalSearchScope;
 import io.github.binarybeing.hotcat.plugin.utils.LogUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -39,5 +35,17 @@ public class HotCatReference extends PsiReferenceBase<PsiElement> {
             LogUtils.addError(e, "HotCatReference.resolve error");
             return null;
         }
+    }
+
+    @Override
+    public Object @NotNull [] getVariants() {
+        return new Object[]{
+                new LookupElement() {
+                    @Override
+                    public @NotNull String getLookupString() {
+                        return "this is my test";
+                    }
+                }
+        };
     }
 }

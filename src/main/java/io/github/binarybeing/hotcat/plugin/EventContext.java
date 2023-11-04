@@ -9,7 +9,9 @@ import io.github.binarybeing.hotcat.plugin.utils.ApplicationRunnerUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
@@ -50,6 +52,18 @@ public class EventContext {
             }
         }
         return null;
+    }
+
+    public static Optional<PluginEntity> getPluginEntity(Long eventId){
+        if (eventId == null) {
+            return Optional.empty();
+        }
+        for (Map.Entry<Long, PluginEntity> entry : pluginMap.entrySet()) {
+            if (Objects.equals(eventId, entry.getKey())) {
+                return Optional.of(entry.getValue());
+            }
+        }
+        return Optional.empty();
     }
 
     public static AnActionEvent getEvent(Long id) throws Exception{

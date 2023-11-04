@@ -8,6 +8,7 @@ import io.github.binarybeing.hotcat.plugin.action.HotCatSubPluginAction;
 import io.github.binarybeing.hotcat.plugin.action.InstallPluginAction;
 import io.github.binarybeing.hotcat.plugin.entity.PluginEntity;
 import io.github.binarybeing.hotcat.plugin.handlers.InvokePythonPluginHandler;
+import io.github.binarybeing.hotcat.plugin.server.Python3Server;
 import io.github.binarybeing.hotcat.plugin.server.Server;
 import io.github.binarybeing.hotcat.plugin.utils.DialogUtils;
 import io.github.binarybeing.hotcat.plugin.utils.LogUtils;
@@ -31,9 +32,25 @@ import java.util.List;
  */
 public class HotCatActionGroup extends ActionGroup {
     private static Server server;
+
+    private static Python3Server pythonServer;
     private static boolean setShellRunner = false;
 
+    private static boolean setLoadingGif = false;
+    private static boolean setPythonRunner = false;
     static {
+        new Thread(()->{
+            try {
+                Thread.sleep(10000L);
+                init();
+            }catch (Exception e){}
+        }).start();
+    }
+   private static void init() {
+        LogUtils.addLog("setShellRunner: " + (setShellRunner || setShellRunner()));
+        LogUtils.addLog("setPythonRunner: " + (setPythonRunner || setPythonRunner()));
+        LogUtils.addLog("setLoadingGif: " + (setLoadingGif || setLoadingGif()));
+
         try {
             server = Server.INSTANCE;
             server.start();
@@ -44,6 +61,12 @@ public class HotCatActionGroup extends ActionGroup {
 //            GrpcServerConfig.INSTANCE.start();
         }catch (Exception e) {
             LogUtils.addLog("grpc server start failed: " + e.getMessage());
+        }
+        try {
+            pythonServer = new Python3Server();
+            pythonServer.start();
+        } catch (Exception e) {
+            LogUtils.addLog("python3 server start failed: " + e.getMessage());
         }
     }
 
@@ -70,7 +93,7 @@ public class HotCatActionGroup extends ActionGroup {
     }
 
     private List<AnAction> getPlugins(List<PluginEntity> plugins, IdeaEventHandler handler, String groupName){
-        LogUtils.addLog("setShellRunner: " + (setShellRunner || setShellRunner()));
+
         if (CollectionUtils.isEmpty(plugins)) {
             return Collections.emptyList();
         }
@@ -106,14 +129,27 @@ public class HotCatActionGroup extends ActionGroup {
     public void update(@NotNull AnActionEvent e) {
         e.getPresentation().setEnabled(server != null);
     }
-
+    private static boolean setPythonRunner(){
+        copyFile("python_script_executor.py");
+        return setPythonRunner = true;
+    }
     private static boolean setShellRunner(){
-        String cpFileName = PluginFileUtils.getPluginDirName()+"/shell_runner.sh";
+        copyFile("shell_runner.sh");
+        return setShellRunner = true;
+    }
+
+    private static boolean setLoadingGif(){
+        copyFile("loading.gif");
+        return setLoadingGif = true;
+    }
+
+    private static boolean copyFile(String fileName){
+        String cpFileName = PluginFileUtils.getPluginDirName() + "/" + fileName;
         File file = new File(cpFileName);
         if (file.exists()) {
             file.delete();
         }
-        try (InputStream stream = HotCatActionGroup.class.getClassLoader().getResourceAsStream("shell_runner.sh");
+        try (InputStream stream = HotCatActionGroup.class.getClassLoader().getResourceAsStream(fileName);
              FileOutputStream fileOutputStream = new FileOutputStream(cpFileName)) {
             assert stream != null;
             byte[] bytes = new byte[1024];
@@ -122,10 +158,12 @@ public class HotCatActionGroup extends ActionGroup {
                 fileOutputStream.write(bytes, 0, len);
                 fileOutputStream.flush();
             }
-            return setShellRunner = true;
+            return true;
         } catch (Exception e) {
-            DialogUtils.showError("init ShellRunner error", e.getMessage());
+            DialogUtils.showError("init runner error " + fileName, e.getMessage());
             return false;
         }
     }
+
+
 }

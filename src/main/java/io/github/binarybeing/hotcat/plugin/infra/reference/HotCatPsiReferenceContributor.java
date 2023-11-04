@@ -19,7 +19,9 @@ public class HotCatPsiReferenceContributor extends PsiReferenceContributor {
         PsiElementPattern.Capture<PsiComment> pattern = new HotCatElementPatter(PsiComment.class);
 
         HotCatPsiReferenceProvider provider = new HotCatPsiReferenceProvider();
+
+
         //  new feature
-//        registrar.registerReferenceProvider(pattern, provider);
+        registrar.registerReferenceProvider(pattern, provider);
     }
 }
