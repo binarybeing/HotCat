@@ -430,10 +430,10 @@ public class IdeaPanelController extends BaseEventScriptController {
                     JsonObject jsonObject = ele.getAsJsonObject();
                     ArrayList<String> rowInfo = new ArrayList<>();
                     JPanel newRow = new JPanel(new FlowLayout(FlowLayout.LEFT));
+                    JPanel item = this.newLabeledItem(2, 1);
                     for (Map.Entry<String, JsonElement> entry : jsonObject.entrySet()) {
                         String field = entry.getKey();
                         rowInfo.add(field);
-
                         JsonElement element = entry.getValue();
                         JsonObject info = element.getAsJsonObject();
                         String type = info.get("type").getAsString();
@@ -450,7 +450,8 @@ public class IdeaPanelController extends BaseEventScriptController {
                                     JPasswordField passwordField = new JPasswordField(15);
                                     passwordField.setText(value);
                                     newRes.put(field, passwordField);
-                                    newRow.add(passwordField);
+
+                                    item.add(passwordField);
                                     if (Objects.equals(fieldName, field)) {
                                         passwordField.getDocument().insertString(offset, "", null);
                                         toFocus = passwordField;
@@ -464,7 +465,7 @@ public class IdeaPanelController extends BaseEventScriptController {
                                         jTextField.getDocument().insertString(offset, "", null);
                                         toFocus = jTextField;
                                     }
-                                    newRow.add(jTextField);
+                                    item.add(jTextField);
                                     break;
                                 case "select":
                                     ComboBox<String> comboBox = new ComboBox<>();
@@ -476,7 +477,7 @@ public class IdeaPanelController extends BaseEventScriptController {
                                     if (Objects.equals(fieldName, field)) {
                                         toFocus = comboBox;
                                     }
-                                    newRow.add(comboBox);
+                                    item.add(comboBox);
                                     break;
                                 case "check":
                                     JBCheckBox checkbox = new JBCheckBox();
@@ -489,16 +490,20 @@ public class IdeaPanelController extends BaseEventScriptController {
                                     if (Objects.equals(fieldName, field)) {
                                         toFocus = checkbox;
                                     }
-                                    newRow.add(checkbox);
+                                    item.add(checkbox);
                                     break;
                                 case "label":
                                     JLabel label = new JLabel(value);
                                     newRes.put(field, label);
-                                    newRow.add(label);
+                                    item.add(label);
                                     break;
                                 default:
                                     LogUtils.addLog("not support form type:" + type);
                             }
+                        }
+                        if (item.getComponents() != null && item.getComponents().length == 2) {
+                            newRow.add(item);
+                            item = this.newLabeledItem(2, 1);
                         }
                     }
                     newRowsInfo.add(rowInfo);
