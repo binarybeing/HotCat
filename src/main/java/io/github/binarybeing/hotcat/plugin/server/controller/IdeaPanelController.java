@@ -163,7 +163,7 @@ public class IdeaPanelController extends BaseEventScriptController {
             return new DocumentListener() {
                 @Override
                 public void insertUpdate(DocumentEvent e) {
-                    onFormChanged(fieldName, e.getOffset());
+                    onFormChanged(fieldName, e.getOffset() + 1);
                 }
                 @Override
                 public void removeUpdate(DocumentEvent e) {
@@ -171,9 +171,7 @@ public class IdeaPanelController extends BaseEventScriptController {
                 }
 
                 @Override
-                public void changedUpdate(DocumentEvent e) {
-                    onFormChanged(fieldName, e.getOffset());
-                }
+                public void changedUpdate(DocumentEvent e) {}
             };
         }
 
@@ -453,7 +451,6 @@ public class IdeaPanelController extends BaseEventScriptController {
 
                                     item.add(passwordField);
                                     if (Objects.equals(fieldName, field)) {
-                                        passwordField.getDocument().insertString(offset, "", null);
                                         toFocus = passwordField;
                                     }
                                     break;
@@ -522,7 +519,7 @@ public class IdeaPanelController extends BaseEventScriptController {
                     toFocus.grabFocus();
                     if (toFocus instanceof JTextField) {
                         JTextField textField = (JTextField) toFocus;
-                        textField.setCaretPosition(Math.min(offset + 1, textField.getCaretPosition()));
+                        textField.setCaretPosition(Math.min(offset, textField.getCaretPosition()));
                     }
                 }
                 formInfo = newRes;

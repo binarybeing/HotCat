@@ -9,9 +9,11 @@ import io.github.binarybeing.hotcat.plugin.server.Server;
 import io.github.binarybeing.hotcat.plugin.utils.HttpClientUtils;
 import io.github.binarybeing.hotcat.plugin.utils.LogUtils;
 import io.github.binarybeing.hotcat.plugin.utils.PluginFileUtils;
+import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -70,10 +72,20 @@ public class InvokePythonPluginHandler implements IdeaEventHandler {
             map.put("action", action);
             map.put("data", new String(Base64.getEncoder().encode(data.getBytes(StandardCharsets.UTF_8))));
             String json = new Gson().toJson(map);
-
-            String cmd = String.format("python3 '%s' '%s'  '%s'  '%s' '%s'", callbackPath, Server.INSTANCE.getPort(), eventId, callbackPath, json);
+            File outPutFile = new File(PluginFileUtils.getPluginDirName() + "/python3_output.log");
+            if (outPutFile.exists()) {
+                outPutFile.delete();
+            }
+            String cmd = String.format("python3 '%s' '%s'  '%s'  '%s' '%s' '%s'", callbackPath, Server.INSTANCE.getPort(), eventId, callbackPath, json, outPutFile.getAbsolutePath());
             cmd = new String(Base64.getEncoder().encode(cmd.getBytes(StandardCharsets.UTF_8)));
-            return HttpClientUtils.get("http://localhost:17022/" + cmd);
+            return HttpClientUtils.get("http://localhost:17022/" + cmd)
+                    .thenApply(s -> {
+                        try {
+                            return FileUtils.readFileToString(outPutFile, StandardCharsets.UTF_8);
+                        } catch (IOException e) {}
+                        return "";
+                    });
+
         } catch (Exception e) {
             LogUtils.addError(e, "callback file error: " + callbackPath);
             return CompletableFuture.failedFuture(e);
