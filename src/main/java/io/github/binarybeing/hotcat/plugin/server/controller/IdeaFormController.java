@@ -50,7 +50,7 @@ public class IdeaFormController extends BaseEventScriptController {
         return Response.success(result);
     }
 
-    public static class FormPanel {
+    public static class FormPanel extends ComponentAddableBuilder {
 
         private final JPanel jPanel;
         private final AnActionEvent event;
@@ -159,9 +159,45 @@ public class IdeaFormController extends BaseEventScriptController {
             }
             layout.setHorizontalGroup(hGroup);
         }
+
+        @Override
+        public FormPanel addInput(String label, String field, String defaultValue) {
+            newGroup().addInput(label, field, defaultValue).compose();
+            return this;
+        }
+
+        @Override
+        public FormPanel addPwdInput(String label, String field, String defaultValue) {
+            newGroup().addPwdInput(label, field, defaultValue).compose();
+            return this;
+        }
+
+        @Override
+        public FormPanel addChecks(String label, String[] options) {
+            newGroup().addChecks(label, options).compose();
+            return this;
+        }
+
+        @Override
+        public FormPanel addCheck(String label, String field, String text, boolean checked) {
+            newGroup().addCheck(label, field, text, checked).compose();
+            return this;
+        }
+
+        @Override
+        public FormPanel addRadios(String label, String field, String[] options, int selectedIndex) {
+            newGroup().addRadios(label, field, options, selectedIndex).compose();
+            return this;
+        }
+
+        @Override
+        public FormPanel addSelect(String label, String field, String[] options, String defaultValue) {
+            newGroup().addSelect(label, field, options, defaultValue).compose();
+            return this;
+        }
     }
 
-    public static class GroupBuilder {
+    public static class GroupBuilder extends ComponentAddableBuilder {
 
         private static final int INPUT_DEFAULT_LENGTH = 30;
         private final FormPanel parent;
@@ -171,74 +207,115 @@ public class IdeaFormController extends BaseEventScriptController {
             this.parent = parent;
         }
 
+        @Override
         public GroupBuilder addInput(String label, String field, String defaultValue) {
-            JLabel jLabel = new JLabel(label);
-            PanelBasedJComponent<JLabel> labelPanel = new PanelBasedJComponent<>(jLabel);
-            componentGroup.addComponent(labelPanel);
+            JLabel jLabel = null;
+            if (StringUtils.isNotEmpty(label)) {
+                jLabel = new JLabel(label);
+                PanelBasedJComponent<JLabel> labelPanel = new PanelBasedJComponent<>(jLabel);
+                componentGroup.addComponent(labelPanel);
+            }
 
             if (StringUtils.isNotEmpty(field)) {
                 JTextField jTextField = new JTextField(INPUT_DEFAULT_LENGTH);
                 jTextField.setText(defaultValue);
-                jLabel.setLabelFor(jTextField);
+                Optional.ofNullable(jLabel).ifPresent(l -> l.setLabelFor(jTextField));
                 componentGroup.addComponentWithField(field, jTextField);
             }
             return this;
         }
 
+        @Override
         public GroupBuilder addPwdInput(String label, String field, String defaultValue) {
-            JLabel jLabel = new JLabel(label);
-            PanelBasedJComponent<JLabel> labelPanel = new PanelBasedJComponent<>(jLabel);
-            componentGroup.addComponent(labelPanel);
+            JLabel jLabel = null;
+            if (StringUtils.isNotEmpty(label)) {
+                jLabel = new JLabel(label);
+                PanelBasedJComponent<JLabel> labelPanel = new PanelBasedJComponent<>(jLabel);
+                componentGroup.addComponent(labelPanel);
+            }
 
             if (StringUtils.isNotEmpty(field)) {
                 JPasswordField pwdField = new JPasswordField(INPUT_DEFAULT_LENGTH);
                 pwdField.setText(defaultValue);
-                jLabel.setLabelFor(pwdField);
+                Optional.ofNullable(jLabel).ifPresent(l -> l.setLabelFor(pwdField));
                 componentGroup.addComponentWithField(field, pwdField);
             }
             return this;
         }
 
-        public GroupBuilder addChecks(String label, String[] optionArr) {
-            JLabel jLabel = new JLabel(label);
-            PanelBasedJComponent<JLabel> labelPanel = new PanelBasedJComponent<>(jLabel);
-            componentGroup.addComponent(labelPanel);
+        @Override
+        public GroupBuilder addChecks(String label, String[] options) {
+            JLabel jLabel = null;
+            if (StringUtils.isNotEmpty(label)) {
+                jLabel = new JLabel(label);
+                PanelBasedJComponent<JLabel> labelPanel = new PanelBasedJComponent<>(jLabel);
+                componentGroup.addComponent(labelPanel);
+            }
 
             JPanel container = new JPanel();
             container.setLayout(new FlowLayout(FlowLayout.LEADING));
             componentGroup.addComponent(container);
-            List<String> optionList = Arrays.asList(optionArr);
+            List<String> optionList = Arrays.asList(options);
             optionList.forEach(option -> {
                 JCheckBox jCheckBox = new JCheckBox(option);
                 container.add(jCheckBox);
                 componentGroup.addChildComponentWithField(option, jCheckBox);
             });
-            labelPanel.getChild().setLabelFor(container);
+            Optional.ofNullable(jLabel).ifPresent(l -> l.setLabelFor(container));
             return this;
         }
 
-        public GroupBuilder addRadios(String label, String field, String[] optionArr) {
-            JLabel jLabel = new JLabel(label);
-            PanelBasedJComponent<JLabel> labelPanel = new PanelBasedJComponent<>(jLabel);
-            componentGroup.addComponent(labelPanel);
+        @Override
+        public GroupBuilder addCheck(String label, String field, String text, boolean checked) {
+            JLabel jLabel = null;
+            if (StringUtils.isNotEmpty(label)) {
+                jLabel = new JLabel(label);
+                PanelBasedJComponent<JLabel> labelPanel = new PanelBasedJComponent<>(jLabel);
+                componentGroup.addComponent(labelPanel);
+            }
+
+            JPanel container = new JPanel();
+            container.setLayout(new FlowLayout(FlowLayout.LEADING));
+            componentGroup.addComponent(container);
+            JCheckBox jCheckBox = new JCheckBox(text);
+            jCheckBox.setSelected(checked);
+            container.add(jCheckBox);
+            componentGroup.addChildComponentWithField(field, jCheckBox);
+            Optional.ofNullable(jLabel).ifPresent(l -> l.setLabelFor(container));
+            return this;
+        }
+
+        @Override
+        public GroupBuilder addRadios(String label, String field, String[] options, int selectedIndex) {
+            JLabel jLabel = null;
+            if (StringUtils.isNotEmpty(label)) {
+                jLabel = new JLabel(label);
+                PanelBasedJComponent<JLabel> labelPanel = new PanelBasedJComponent<>(jLabel);
+                componentGroup.addComponent(labelPanel);
+            }
 
             RadioBtnPanel radioBtns = new RadioBtnPanel();
             componentGroup.addComponentWithField(field, radioBtns);
             ButtonGroup buttonGroup = new ButtonGroup();
-            Arrays.asList(optionArr).forEach(option -> {
+            for (int i = 0; i < options.length; i++) {
+                String option = options[i];
                 JRadioButton radioButton = new JRadioButton(option);
+                radioButton.setSelected(i == selectedIndex);
                 buttonGroup.add(radioButton);
                 radioBtns.addChild(radioButton);
                 radioBtns.add(radioButton);
-            });
-            labelPanel.getChild().setLabelFor(radioBtns);
+            }
+            Optional.ofNullable(jLabel).ifPresent(l -> l.setLabelFor(radioBtns));
             return this;
         }
 
+        @Override
         public GroupBuilder addSelect(String label, String field, String[] options, String defaultValue) {
-            JLabel jLabel = new JLabel(label);
-            PanelBasedJComponent<JLabel> labelPanel = new PanelBasedJComponent<>(jLabel);
-            componentGroup.addComponent(labelPanel);
+            if (StringUtils.isNotEmpty(label)) {
+                JLabel jLabel = new JLabel(label);
+                PanelBasedJComponent<JLabel> labelPanel = new PanelBasedJComponent<>(jLabel);
+                componentGroup.addComponent(labelPanel);
+            }
 
             ComboBox<String> box = new ComboBox<>(options);
             if (StringUtils.isNotEmpty(defaultValue)) {
@@ -315,5 +392,46 @@ public class IdeaFormController extends BaseEventScriptController {
         public List<JRadioButton> getChildren() {
             return children;
         }
+    }
+
+    /**
+     * 「控件可添加」的构造器抽象类
+     *
+     * @implSpec    需要支持新控件时，向该接口添加新方法，
+     *              并同时在 {@link GroupBuilder} 和 {@link FormPanel} 中编写实现逻辑
+     */
+    private abstract static class ComponentAddableBuilder {
+
+        public ComponentAddableBuilder addInput(String label, String field) {
+            addInput(label, field, "");
+            return this;
+        }
+
+        public ComponentAddableBuilder addPwdInput(String label, String field) {
+            addPwdInput(label, field, "");
+            return this;
+        }
+
+        public ComponentAddableBuilder addCheck(String label, String field, String text) {
+            addCheck(label, field, text, false);
+            return this;
+        }
+
+        public ComponentAddableBuilder addRadios(String label, String field, String[] options) {
+            addRadios(label, field, options, -1);
+            return this;
+        }
+
+        public abstract ComponentAddableBuilder addInput(String label, String field, String defaultValue);
+
+        public abstract ComponentAddableBuilder addPwdInput(String label, String field, String defaultValue);
+
+        public abstract ComponentAddableBuilder addCheck(String label, String field, String text, boolean checked);
+
+        public abstract ComponentAddableBuilder addChecks(String label, String[] options);
+
+        public abstract ComponentAddableBuilder addRadios(String label, String field, String[] options, int selectedIndex);
+
+        public abstract ComponentAddableBuilder addSelect(String label, String field, String[] options, String defaultValue);
     }
 }
