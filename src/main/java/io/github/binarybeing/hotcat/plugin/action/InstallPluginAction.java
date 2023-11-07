@@ -90,7 +90,6 @@ public class InstallPluginAction extends AnAction {
                             return;
                         }
                         JOptionPane.showMessageDialog(null, "Install " + name + " Success", "Success", JOptionPane.INFORMATION_MESSAGE);
-                        HotCatActionGroup.initCall(pluginDir);
                     } else {
                         PluginFileUtils.deleteDir(pluginDir);
                         JOptionPane.showMessageDialog(null, "Install Plugin Failed: " + file.getName());

@@ -67,6 +67,9 @@ public class HotCatActionGroup extends ActionGroup {
         try {
             pythonServer = new Python3Server();
             pythonServer.start();
+            while (!pythonServer.isStarted()) {
+                Thread.sleep(1000L);
+            }
         } catch (Exception e) {
             LogUtils.addLog("python3 server start failed: " + e.getMessage());
         }
@@ -183,6 +186,8 @@ public class HotCatActionGroup extends ActionGroup {
             absolutePath += "/";
         }
         String initScriptPath = absolutePath + "init.py";
+
+
         CompletableFuture<String> future = ScriptUtils.runPython3(initScriptPath, new String[]{String.valueOf(Server.INSTANCE.getPort()), "999999999", file.getAbsolutePath()});
         future.whenComplete((s, e)->{
             if (e != null) {
@@ -195,7 +200,7 @@ public class HotCatActionGroup extends ActionGroup {
     private static void initCall(){
         List<PluginEntity> entities = PluginFileUtils.listPlugin();
         for (PluginEntity plugin : entities) {
-            initCall(plugin.getFile());
+            ScriptUtils.runInit(plugin);
         }
 
     }

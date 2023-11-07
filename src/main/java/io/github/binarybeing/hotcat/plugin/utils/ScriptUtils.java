@@ -1,6 +1,9 @@
 package io.github.binarybeing.hotcat.plugin.utils;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import io.github.binarybeing.hotcat.plugin.EventContext;
+import io.github.binarybeing.hotcat.plugin.entity.PluginEntity;
+import io.github.binarybeing.hotcat.plugin.server.Server;
 import org.apache.commons.jexl3.JexlContext;
 import org.apache.commons.jexl3.JexlEngine;
 import org.apache.commons.jexl3.JexlExpression;
@@ -9,7 +12,9 @@ import org.apache.commons.jexl3.internal.Engine;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -32,6 +37,39 @@ public class ScriptUtils {
         }
         return null;
     }
+
+    public static void runInit(PluginEntity entity){
+        EventContext.empyEvent()
+                .thenAccept(e -> {
+                    Long eventId = EventContext.registerEvent(e, entity);
+                    String path = entity.getFile().getAbsolutePath();
+                    if (entity.getFile().isFile()) {
+                        path = entity.getFile().getParentFile().getAbsolutePath();
+                    }
+                    if (!path.endsWith("/")) {
+                        path += "/";
+                    }
+                    path += "init.py";
+                    run("python3", path, Server.INSTANCE.getPort(), eventId, path);
+        });
+    }
+
+    /**
+     *
+     * @param cmd
+     * @return
+     */
+    public static CompletableFuture<String> run(String cmd, Object...args){
+        StringBuilder sb = new StringBuilder();
+        sb.append(cmd).append(" ");
+        for (Object arg : args) {
+            sb.append("'").append(arg).append("' ");
+        }
+        cmd = sb.toString();
+        cmd = new String(Base64.getEncoder().encode(cmd.getBytes(StandardCharsets.UTF_8)));
+        return HttpClientUtils.get("http://localhost:17022/" + cmd);
+    }
+
 
     public static CompletableFuture<String> runPython3(String cmd, String[] args){
         try {
