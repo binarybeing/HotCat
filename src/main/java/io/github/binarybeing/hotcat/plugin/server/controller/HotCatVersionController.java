@@ -12,6 +12,6 @@ public class HotCatVersionController extends BaseEventScriptController{
 
     @Override
     protected Response handle(Request request, AnActionEvent event, String script){
-        return Response.success("1.3.6.193231.1");
+        return Response.success("1.3.6.193231.2");
     }
 }

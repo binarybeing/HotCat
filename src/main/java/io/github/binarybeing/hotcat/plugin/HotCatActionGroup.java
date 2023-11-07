@@ -13,6 +13,7 @@ import io.github.binarybeing.hotcat.plugin.server.Server;
 import io.github.binarybeing.hotcat.plugin.utils.DialogUtils;
 import io.github.binarybeing.hotcat.plugin.utils.LogUtils;
 import io.github.binarybeing.hotcat.plugin.utils.PluginFileUtils;
+import io.github.binarybeing.hotcat.plugin.utils.ScriptUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -24,6 +25,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author gn.binarybei
@@ -68,6 +70,7 @@ public class HotCatActionGroup extends ActionGroup {
         } catch (Exception e) {
             LogUtils.addLog("python3 server start failed: " + e.getMessage());
         }
+       initCall();
     }
 
     public HotCatActionGroup() {
@@ -163,6 +166,38 @@ public class HotCatActionGroup extends ActionGroup {
             DialogUtils.showError("init runner error " + fileName, e.getMessage());
             return false;
         }
+    }
+
+    public static void initCall(File plugin) {
+        if (plugin == null) {
+            return;
+        }
+        File file = plugin;
+        if (file.isFile()) {
+            file = file.getParentFile();
+        }
+
+
+        String absolutePath = file.getAbsolutePath();
+        if (!absolutePath.endsWith("/")) {
+            absolutePath += "/";
+        }
+        String initScriptPath = absolutePath + "init.py";
+        CompletableFuture<String> future = ScriptUtils.runPython3(initScriptPath, new String[]{String.valueOf(Server.INSTANCE.getPort()), "999999999", file.getAbsolutePath()});
+        future.whenComplete((s, e)->{
+            if (e != null) {
+                LogUtils.addError(e, "init call failed: " + initScriptPath);
+            } else {
+                LogUtils.addLog("init call finished: " + initScriptPath + ", res=" + s);
+            }
+        });
+    }
+    private static void initCall(){
+        List<PluginEntity> entities = PluginFileUtils.listPlugin();
+        for (PluginEntity plugin : entities) {
+            initCall(plugin.getFile());
+        }
+
     }
 
 
