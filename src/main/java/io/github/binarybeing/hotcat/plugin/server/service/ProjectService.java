@@ -9,7 +9,6 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectUtil;
-import com.intellij.openapi.roots.ModuleFileIndex;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -20,7 +19,9 @@ import org.junit.Assert;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class ProjectService {
@@ -161,9 +162,12 @@ public class ProjectService {
         List<IdeaProjectGrpcService.Module> list = new ArrayList<>();
 
         for (Module module : modules) {
+            VirtualFile[] files = ModuleRootManager.getInstance(module).getContentRoots();
+            if (ArrayUtils.isEmpty(files)) {
+                continue;
+            }
             IdeaProjectGrpcService.Module.Builder builder = IdeaProjectGrpcService.Module.newBuilder();
             builder.setName(module.getName());
-            VirtualFile[] files = ModuleRootManager.getInstance(module).getContentRoots();
             builder.setPath(files[0].getPath());
             list.add(builder.build());
         }

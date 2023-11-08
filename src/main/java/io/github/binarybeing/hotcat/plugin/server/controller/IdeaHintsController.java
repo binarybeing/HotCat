@@ -35,7 +35,10 @@ public class IdeaHintsController extends BaseEventScriptController {
 
     public static class HotCatHints {
         private List<String[]> list = new ArrayList<>();
+
+        private List<String[]> fileHintList = new ArrayList<>();
         private List<String> toRemove = new ArrayList<>();
+        private List<String[]> fileHintRemoveList = new ArrayList<>();
         private AnActionEvent event;
 
         public HotCatHints(AnActionEvent event) {
@@ -49,9 +52,17 @@ public class IdeaHintsController extends BaseEventScriptController {
             list.add(new String[]{text, hint, jumpUrl});
             return this;
         }
-
         public HotCatHints removeHint(String text) {
             toRemove.add(text);
+            return this;
+        }
+        public HotCatHints addFileHint(String filePath, String text, String hint, String jumpUrl) {
+            fileHintList.add(new String[]{filePath, text, hint, jumpUrl});
+            return this;
+        }
+
+        public HotCatHints removeFileHint(String filePath, String text, String hint) {
+            fileHintRemoveList.add(new String[]{filePath, text, hint});
             return this;
         }
 
@@ -62,6 +73,13 @@ public class IdeaHintsController extends BaseEventScriptController {
             for (String s : toRemove) {
                 HotCatFactoryInlayHintsCollector.unregister(s);
             }
+            for (String[] strings : fileHintList) {
+                HotCatFactoryInlayHintsCollector.registerFile(strings[0], strings[1], strings[2], strings[3]);
+            }
+            for (String[] strings : fileHintRemoveList) {
+                HotCatFactoryInlayHintsCollector.unregisterFile(strings[0], strings[1], strings[2]);
+            }
+
             return "ok";
         }
 

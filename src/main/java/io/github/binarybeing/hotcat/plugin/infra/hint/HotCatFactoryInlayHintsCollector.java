@@ -8,11 +8,14 @@ import com.intellij.codeInsight.hints.presentation.PresentationFactory;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.impl.EditorImpl;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.PsiJavaToken;
 import com.intellij.psi.util.PsiTreeUtil;
 import io.github.binarybeing.hotcat.plugin.utils.LogUtils;
 import kotlin.Unit;
 import kotlin.jvm.functions.Function2;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
@@ -27,6 +30,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 public class HotCatFactoryInlayHintsCollector extends FactoryInlayHintsCollector {
 
@@ -42,24 +46,79 @@ public class HotCatFactoryInlayHintsCollector extends FactoryInlayHintsCollector
     public static void register(String text, String hint, String jumpUrl){
         listenerMap.put(text, Pair.of(hint, jumpUrl));
     }
-
+    public static void unregister(String text){
+        listenerMap.remove(text);
+    }
     public static void registerFile(String filePath, String text, String hint, String jumpUrl){
         Map<String, List<Pair<String, String>>> map = fileListenerMap.computeIfAbsent(filePath, k-> new HashMap<>());
         List<Pair<String, String>> list = map.computeIfAbsent(text, k -> new ArrayList<>());
         list.add(Pair.of(hint, jumpUrl));
     }
+    public static void unregisterFile(String filePath, String text, String hint){
+        Map<String, List<Pair<String, String>>> map = fileListenerMap.get(filePath);
+        if (MapUtils.isEmpty(map)) {
+            return;
+        }
+        List<Pair<String, String>> list = map.get(text);
+        if (CollectionUtils.isEmpty(list)) {
+            return;
+        }
+        Iterator<Pair<String, String>> iterator = list.iterator();
+        while (iterator.hasNext()) {
+            Pair<String, String> pair = iterator.next();
+            if (Objects.equals(hint, pair.getLeft())) {
+                iterator.remove();
+            }
+        }
 
-    public static void unregister(String text){
-        listenerMap.remove(text);
     }
 
     public HotCatFactoryInlayHintsCollector(@NotNull Editor editor) {
         super(editor);
     }
-
+    public boolean collectByJavaFile(@NotNull PsiElement psiElement, @NotNull Editor editor, @NotNull InlayHintsSink inlayHintsSink) {
+        if (!(psiElement instanceof PsiJavaFile)) {
+            return false;
+        }
+        PsiJavaFile javaFile = (PsiJavaFile) psiElement;
+        String path = javaFile.getVirtualFile().getPath();
+        Map<String, List<Pair<String, String>>> listMap = fileListenerMap.get(path);
+        if (listMap == null || listMap.isEmpty()) {
+            return false;
+        }
+        List<Pair<String, Integer>> list = PsiTreeUtil.collectElementsOfType(psiElement, PsiJavaToken.class)
+                .stream().map(t->Pair.of(t.getText(), t.getTextOffset()))
+                .filter(s -> s.getLeft().startsWith("\""))
+                .filter(s -> s.getLeft().endsWith("\""))
+                .collect(Collectors.toList());
+        boolean changed = false;
+        for (Pair<String, Integer> token : list) {
+            List<Pair<String, String>> pairs = listMap.get(token.getLeft());
+            if (pairs == null || pairs.size() == 0) {
+                continue;
+            }
+            int offset = token.getRight();
+            for (Pair<String, String> pair : pairs) {
+                String hint = pair.getLeft();
+                String jump = pair.getRight();
+                String shortHint = hint.length()< 6 ? hint: hint.substring(0, 6) + "...";
+                offset = offset + shortHint.length() + 2;
+                PresentationFactory factory = getFactory();
+                InlayPresentation presentation = factory.smallText(shortHint);
+                presentation = invokeWrap(presentation, hint, factory);
+                if (StringUtils.isNotBlank(jump)) {
+                    presentation = setHoverAndClick(presentation, editor, jump, factory);
+                }
+                inlayHintsSink.addInlineElement(offset, false, presentation);
+                changed = true;
+            }
+        }
+        return changed;
+    }
 
     @Override
     public boolean collect(@NotNull PsiElement psiElement, @NotNull Editor editor, @NotNull InlayHintsSink inlayHintsSink) {
+        collectByJavaFile(psiElement, editor, inlayHintsSink);
         Collection<PsiJavaToken> tokens = PsiTreeUtil.collectElementsOfType(psiElement, PsiJavaToken.class);
 
         boolean ans = false;
@@ -83,7 +142,7 @@ public class HotCatFactoryInlayHintsCollector extends FactoryInlayHintsCollector
             if (shortHint.length() > 5) {
                 shortHint = shortHint.substring(0, 6) + " ...";
             }
-            int offset = token.getTextOffset() + text.length() + 2;
+            int offset = token.getTextOffset() + shortHint.length() + 2;
             PresentationFactory factory = getFactory();
             InlayPresentation presentation = factory.smallText(shortHint);
             presentation = invokeWrap(presentation, hint, factory);
