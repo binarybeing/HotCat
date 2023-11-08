@@ -2,7 +2,6 @@ package io.github.binarybeing.hotcat.plugin.infra.hint;
 
 import com.intellij.codeInsight.hints.FactoryInlayHintsCollector;
 import com.intellij.codeInsight.hints.InlayHintsSink;
-import com.intellij.codeInsight.hints.InlayPresentationFactory;
 import com.intellij.codeInsight.hints.presentation.InlayPresentation;
 import com.intellij.codeInsight.hints.presentation.MouseButton;
 import com.intellij.codeInsight.hints.presentation.PresentationFactory;
@@ -25,14 +24,16 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.URI;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Objects;
+import java.util.List;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class HotCatFactoryInlayHintsCollector extends FactoryInlayHintsCollector {
 
     private static Map<String, Pair<String, String>> listenerMap = new ConcurrentHashMap<>();
+
+    private static Map<String, Map<String, List<Pair<String, String>>>> fileListenerMap = new ConcurrentHashMap<>();
+
     static {
         listenerMap.put("__open_baidu", Pair.of("百度", "https://www.baidu.com"));
         listenerMap.put("__open_baibu", Pair.of("百度", null));
@@ -40,6 +41,12 @@ public class HotCatFactoryInlayHintsCollector extends FactoryInlayHintsCollector
 
     public static void register(String text, String hint, String jumpUrl){
         listenerMap.put(text, Pair.of(hint, jumpUrl));
+    }
+
+    public static void registerFile(String filePath, String text, String hint, String jumpUrl){
+        Map<String, List<Pair<String, String>>> map = fileListenerMap.computeIfAbsent(filePath, k-> new HashMap<>());
+        List<Pair<String, String>> list = map.computeIfAbsent(text, k -> new ArrayList<>());
+        list.add(Pair.of(hint, jumpUrl));
     }
 
     public static void unregister(String text){
@@ -80,23 +87,8 @@ public class HotCatFactoryInlayHintsCollector extends FactoryInlayHintsCollector
             PresentationFactory factory = getFactory();
             InlayPresentation presentation = factory.smallText(shortHint);
             presentation = invokeWrap(presentation, hint, factory);
-
-
-            InlayPresentationFactory.Padding padding = new InlayPresentationFactory.Padding(5, 0, 6, 0);
-            InlayPresentationFactory.RoundedCorners corners = new InlayPresentationFactory.RoundedCorners(4, 4);
-            presentation = factory.container(presentation, padding, corners, Color.darkGray, 0);
-            presentation = factory.withTooltip(hint, presentation);
             if (StringUtils.isNotBlank(hintAndJump.getRight())) {
                 presentation = setHoverAndClick(presentation, editor, hintAndJump.getRight(), factory);
-                presentation = factory.referenceOnHover(presentation, (event, point)->{
-                    if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-                        try {
-                            Desktop.getDesktop().browse(new URI(hintAndJump.getRight()));
-                        } catch (Exception e) {
-                            LogUtils.addError(e, "open url error:"+ hintAndJump.getRight());
-                        }
-                    }
-                });
             }
 
             inlayHintsSink.addInlineElement(offset, false, presentation);
@@ -138,17 +130,25 @@ public class HotCatFactoryInlayHintsCollector extends FactoryInlayHintsCollector
                                                PresentationFactory factory){
         try {
             Class<? extends PresentationFactory> factoryClass = factory.getClass();
-            Method referenceMethod = factoryClass.getMethod("referenceOnHover", InlayPresentation.class, InlayPresentationFactory.ClickListener.class);
-
-            return (InlayPresentation) referenceMethod.invoke(factory, presentation, (InlayPresentationFactory.ClickListener) (mouseEvent, point) -> {
-                if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-                    try {
-                        Desktop.getDesktop().browse(new URI(jumpUrl));
-                    } catch (Exception e) {
-                        LogUtils.addError(e, "open url error:"+ jumpUrl);
+            Class<?> listenerClass = Class.forName("com.intellij.codeInsight.hints.InlayPresentationFactory$ClickListener");
+            Method referenceMethod = factoryClass.getMethod("referenceOnHover", InlayPresentation.class, listenerClass);
+            Object onClickListener = Proxy.newProxyInstance(factory.getClass().getClassLoader(), new Class[]{listenerClass}, new InvocationHandler() {
+                @Override
+                public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                    if (Objects.equals(method.getName(), "onClick")) {
+                        if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+                            try {
+                                Desktop.getDesktop().browse(new URI(jumpUrl));
+                            } catch (Exception e) {
+                                LogUtils.addError(e, "open url error:" + jumpUrl);
+                            }
+                        }
                     }
+                    return null;
                 }
             });
+
+            return (InlayPresentation) referenceMethod.invoke(factory, presentation, onClickListener);
 
         } catch (Exception e) {
             return setHoverClickWithOutReference(presentation, editor, jumpUrl, factory);
