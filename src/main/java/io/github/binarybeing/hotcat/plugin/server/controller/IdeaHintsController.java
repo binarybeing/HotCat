@@ -5,9 +5,11 @@ import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiJavaFile;
+import io.github.binarybeing.hotcat.plugin.EventContext;
 import io.github.binarybeing.hotcat.plugin.infra.hint.HotCatFactoryInlayHintsCollector;
 import io.github.binarybeing.hotcat.plugin.server.dto.Request;
 import io.github.binarybeing.hotcat.plugin.server.dto.Response;
+import io.github.binarybeing.hotcat.plugin.utils.JsonUtils;
 import org.apache.commons.jexl3.JexlExpression;
 import org.apache.commons.jexl3.MapContext;
 
@@ -24,7 +26,9 @@ public class IdeaHintsController extends BaseEventScriptController {
 
     @Override
     protected Response handle(Request request, AnActionEvent event, String script) {
-        HotCatHints hints = new HotCatHints(event);
+        Long eventId = JsonUtils.readJsonLongValue(request.getJsonObject(), "eventId");
+        HotCatHints hints = new HotCatHints(event, eventId);
+
         JexlExpression expression = super.jexlEngine.createExpression(script);
         MapContext context = new MapContext();
         context.set("hints", hints);
@@ -34,53 +38,20 @@ public class IdeaHintsController extends BaseEventScriptController {
     }
 
     public static class HotCatHints {
-        private List<String[]> list = new ArrayList<>();
-
-        private List<String[]> fileHintList = new ArrayList<>();
-        private List<String> toRemove = new ArrayList<>();
-        private List<String[]> fileHintRemoveList = new ArrayList<>();
         private AnActionEvent event;
+        private Long eventId;
 
-        public HotCatHints(AnActionEvent event) {
+        public HotCatHints(AnActionEvent event, Long eventId) {
             this.event = event;
-        }
-        //        public HotCatHints addHint(String text, String hint) {
-//            return addHint(text, hint, null);
-//        }
-
-        public HotCatHints addHint(String text, String hint, String jumpUrl) {
-            list.add(new String[]{text, hint, jumpUrl});
-            return this;
-        }
-        public HotCatHints removeHint(String text) {
-            toRemove.add(text);
-            return this;
-        }
-        public HotCatHints addFileHint(String filePath, String text, String hint, String jumpUrl) {
-            fileHintList.add(new String[]{filePath, text, hint, jumpUrl});
-            return this;
+            this.eventId = eventId;
         }
 
-        public HotCatHints removeFileHint(String filePath, String text, String hint) {
-            fileHintRemoveList.add(new String[]{filePath, text, hint});
+        public HotCatHints listenHintCollect(String pythonListenerScriptPath){
+            EventContext.getPluginEntity(eventId)
+                    .ifPresent(p->{
+                        HotCatFactoryInlayHintsCollector.listenHintCollectEvent(p, pythonListenerScriptPath);
+                    });
             return this;
-        }
-
-        public String done(){
-            for (String[] strings : list) {
-                HotCatFactoryInlayHintsCollector.register(strings[0], strings[1], strings[2]);
-            }
-            for (String s : toRemove) {
-                HotCatFactoryInlayHintsCollector.unregister(s);
-            }
-            for (String[] strings : fileHintList) {
-                HotCatFactoryInlayHintsCollector.registerFile(strings[0], strings[1], strings[2], strings[3]);
-            }
-            for (String[] strings : fileHintRemoveList) {
-                HotCatFactoryInlayHintsCollector.unregisterFile(strings[0], strings[1], strings[2]);
-            }
-
-            return "ok";
         }
 
         public String refresh(){

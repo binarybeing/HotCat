@@ -1,5 +1,6 @@
 package io.github.binarybeing.hotcat.plugin.infra.hint;
 
+import com.google.gson.*;
 import com.intellij.codeInsight.hints.FactoryInlayHintsCollector;
 import com.intellij.codeInsight.hints.InlayHintsSink;
 import com.intellij.codeInsight.hints.presentation.InlayPresentation;
@@ -11,11 +12,12 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.PsiJavaToken;
 import com.intellij.psi.util.PsiTreeUtil;
+import io.github.binarybeing.hotcat.plugin.EventContext;
+import io.github.binarybeing.hotcat.plugin.entity.PluginEntity;
 import io.github.binarybeing.hotcat.plugin.utils.LogUtils;
+import io.github.binarybeing.hotcat.plugin.utils.ScriptUtils;
 import kotlin.Unit;
 import kotlin.jvm.functions.Function2;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
@@ -29,7 +31,9 @@ import java.lang.reflect.Proxy;
 import java.net.URI;
 import java.util.List;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class HotCatFactoryInlayHintsCollector extends FactoryInlayHintsCollector {
@@ -38,122 +42,108 @@ public class HotCatFactoryInlayHintsCollector extends FactoryInlayHintsCollector
 
     private static Map<String, Map<String, List<Pair<String, String>>>> fileListenerMap = new ConcurrentHashMap<>();
 
+    private static HashMap<PluginEntity, String> listeningPlugins = new HashMap<>();
+
     static {
         listenerMap.put("__open_baidu", Pair.of("百度", "https://www.baidu.com"));
         listenerMap.put("__open_baibu", Pair.of("百度", null));
     }
 
-    public static void register(String text, String hint, String jumpUrl){
-        listenerMap.put(text, Pair.of(hint, jumpUrl));
-    }
-    public static void unregister(String text){
-        listenerMap.remove(text);
-    }
-    public static void registerFile(String filePath, String text, String hint, String jumpUrl){
-        Map<String, List<Pair<String, String>>> map = fileListenerMap.computeIfAbsent(filePath, k-> new HashMap<>());
-        List<Pair<String, String>> list = map.computeIfAbsent(text, k -> new ArrayList<>());
-        list.add(Pair.of(hint, jumpUrl));
-    }
-    public static void unregisterFile(String filePath, String text, String hint){
-        Map<String, List<Pair<String, String>>> map = fileListenerMap.get(filePath);
-        if (MapUtils.isEmpty(map)) {
-            return;
-        }
-        List<Pair<String, String>> list = map.get(text);
-        if (CollectionUtils.isEmpty(list)) {
-            return;
-        }
-        Iterator<Pair<String, String>> iterator = list.iterator();
-        while (iterator.hasNext()) {
-            Pair<String, String> pair = iterator.next();
-            if (Objects.equals(hint, pair.getLeft())) {
-                iterator.remove();
-            }
-        }
-
+    public static void listenHintCollectEvent(PluginEntity plugin, String pythonListenerScriptPath) {
+        listeningPlugins.put(plugin, pythonListenerScriptPath);
     }
 
     public HotCatFactoryInlayHintsCollector(@NotNull Editor editor) {
         super(editor);
     }
-    public boolean collectByJavaFile(@NotNull PsiElement psiElement, @NotNull Editor editor, @NotNull InlayHintsSink inlayHintsSink) {
+
+
+    private boolean collectByHintCollectListener(@NotNull PsiElement psiElement,
+                                                 @NotNull Editor editor,
+                                                 @NotNull InlayHintsSink inlayHintsSink){
+        if (listeningPlugins.isEmpty()) {
+            return false;
+        }
         if (!(psiElement instanceof PsiJavaFile)) {
             return false;
         }
         PsiJavaFile javaFile = (PsiJavaFile) psiElement;
-        String path = javaFile.getVirtualFile().getPath();
-        Map<String, List<Pair<String, String>>> listMap = fileListenerMap.get(path);
-        if (listMap == null || listMap.isEmpty()) {
-            return false;
-        }
+        Map<String, Object> params = new HashMap<>();
+
         List<Pair<String, Integer>> list = PsiTreeUtil.collectElementsOfType(psiElement, PsiJavaToken.class)
-                .stream().map(t->Pair.of(t.getText(), t.getTextOffset()))
+                .stream().map(t -> Pair.of(t.getText().trim(), t.getTextOffset()))
                 .filter(s -> s.getLeft().startsWith("\""))
                 .filter(s -> s.getLeft().endsWith("\""))
+                .filter(s -> s.getLeft().length() < 20)
+                .filter(s -> s.getLeft().length() > 0)
                 .collect(Collectors.toList());
-        boolean changed = false;
-        for (Pair<String, Integer> token : list) {
-            List<Pair<String, String>> pairs = listMap.get(token.getLeft());
-            if (pairs == null || pairs.size() == 0) {
-                continue;
-            }
-            int offset = token.getRight();
-            for (Pair<String, String> pair : pairs) {
-                String hint = pair.getLeft();
-                String jump = pair.getRight();
-                String shortHint = hint.length()< 6 ? hint: hint.substring(0, 6) + "...";
-                offset = offset + shortHint.length() + 2;
-                PresentationFactory factory = getFactory();
-                InlayPresentation presentation = factory.smallText(shortHint);
-                presentation = invokeWrap(presentation, hint, factory);
-                if (StringUtils.isNotBlank(jump)) {
-                    presentation = setHoverAndClick(presentation, editor, jump, factory);
-                }
-                inlayHintsSink.addInlineElement(offset, false, presentation);
-                changed = true;
-            }
+        if (list.isEmpty()) {
+            return false;
         }
-        return changed;
+        Pair<String, Integer> pair = list.get(0);
+        params.put("tokens", list);
+        params.put("file", javaFile.getVirtualFile().getPath());
+        CompletableFuture<Void> completableFuture = EventContext.empyEvent().thenAccept(e -> {
+
+            ArrayList<CompletableFuture<String>> arrayList = new ArrayList<>();
+            for (Map.Entry<PluginEntity, String> entry : listeningPlugins.entrySet()) {
+                PluginEntity pluginEntity = entry.getKey();
+                Long eventId = EventContext.registerEvent(e, pluginEntity);
+                CompletableFuture<String> future = ScriptUtils.commonPython3Run(eventId, entry.getValue(), "hint_collect", new Gson().toJson(params), true);
+                arrayList.add(future);
+            }
+            for (CompletableFuture<String> future : arrayList) {
+                try {
+                    String s = future.get(2, TimeUnit.SECONDS);
+                    JsonElement element = JsonParser.parseString(s);
+                    JsonArray array = element.getAsJsonArray();
+                    for (JsonElement jsonElement : array) {
+                        JsonObject object = jsonElement.getAsJsonObject();
+                        String text = object.get("text").getAsString();
+                        String hint = object.get("hint").getAsString();
+                        String jump = null;
+                        if (object.has("jump")) {
+                            jump = object.get("jump").getAsString();
+                        }
+
+                        int offset = object.get("offset").getAsInt();
+                        if (hint.length() > 200) {
+                            hint = hint.substring(0, 200);
+                        }
+                        String shortHint = hint;
+                        if (shortHint.length() > 5) {
+                            shortHint = shortHint.substring(0, 6) + " ...";
+                        }
+                        offset = offset + text.length() + 2;
+                        PresentationFactory factory = getFactory();
+                        InlayPresentation presentation = factory.smallText(shortHint);
+                        presentation = invokeWrap(presentation, hint, factory);
+                        if (StringUtils.isNotBlank(jump)) {
+                            presentation = setHoverAndClick(presentation, editor, jump, factory);
+                        }
+
+                        inlayHintsSink.addInlineElement(offset, false, presentation);
+                    }
+
+                } catch (Exception exception) {
+                    LogUtils.addError(exception, "CompletableFuture get failed");
+                }
+            }
+
+
+        });
+        try {
+            completableFuture.get(1, TimeUnit.SECONDS);
+            return true;
+        } catch (Exception exp) {
+            return false;
+        }
+
     }
 
     @Override
     public boolean collect(@NotNull PsiElement psiElement, @NotNull Editor editor, @NotNull InlayHintsSink inlayHintsSink) {
-        collectByJavaFile(psiElement, editor, inlayHintsSink);
-        Collection<PsiJavaToken> tokens = PsiTreeUtil.collectElementsOfType(psiElement, PsiJavaToken.class);
-
-        boolean ans = false;
-        for (PsiJavaToken token : tokens) {
-            String text = token.getText();
-            if (!text.startsWith("\"") || !text.endsWith("\"")) {
-                continue;
-            }
-            text = text.substring(1, text.length() - 1);
-            Pair<String, String> hintAndJump = listenerMap.get(text);
-            if (hintAndJump == null || StringUtils.isBlank(hintAndJump.getKey())) {
-                continue;
-            }
-            String hint = hintAndJump.getKey();
-
-            if (hint.length() > 200) {
-                hint = hint.substring(0, 200);
-            }
-
-            String shortHint = hint;
-            if (shortHint.length() > 5) {
-                shortHint = shortHint.substring(0, 6) + " ...";
-            }
-            int offset = token.getTextOffset() + shortHint.length() + 2;
-            PresentationFactory factory = getFactory();
-            InlayPresentation presentation = factory.smallText(shortHint);
-            presentation = invokeWrap(presentation, hint, factory);
-            if (StringUtils.isNotBlank(hintAndJump.getRight())) {
-                presentation = setHoverAndClick(presentation, editor, hintAndJump.getRight(), factory);
-            }
-
-            inlayHintsSink.addInlineElement(offset, false, presentation);
-            ans = true;
-        }
-        return ans;
+        return collectByHintCollectListener(psiElement, editor, inlayHintsSink);
     }
 
     /**

@@ -24,9 +24,16 @@ import java.util.concurrent.ConcurrentLinkedDeque;
  */
 public class EventContext {
     private static Long eventId;
-
     private static ConcurrentLinkedDeque<Pair<Long, AnActionEvent>> eventQueue = new ConcurrentLinkedDeque<>();
     private static ConcurrentHashMap<Long, PluginEntity> pluginMap = new ConcurrentHashMap<>();
+
+    private static AnActionEvent anEmptyActionEvent = null;
+
+    static {
+        empyEvent().thenAccept(s->{
+            anEmptyActionEvent = s;
+        });
+    }
 
     public static CompletableFuture<AnActionEvent> empyEvent() {
         CompletableFuture<AnActionEvent> future = new CompletableFuture<>();
@@ -41,6 +48,9 @@ public class EventContext {
             }
         });
         return future;
+    }
+    public static Long registerEmptyEvent(PluginEntity plugin){
+        return registerEvent(anEmptyActionEvent, plugin);
     }
 
     public static Long registerEvent(AnActionEvent event, PluginEntity plugin){

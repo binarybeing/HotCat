@@ -12,10 +12,7 @@ import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -70,8 +67,7 @@ public class PluginFileUtils {
             return Collections.emptyList();
         }
         File[] files = file.listFiles();
-        if(files==null){
-            LogUtils.addLog("listPlugin fail, plugin dir has no file : " + file.getAbsolutePath());
+        if (files == null) {
             return Collections.emptyList();
         }
         LogUtils.addLog("listPlugin plugin dir : " + file.getAbsolutePath());
@@ -83,25 +79,31 @@ public class PluginFileUtils {
             return Arrays.stream(subDirFiles).anyMatch(fl -> "__main__.py".equals(fl.getName()));
         }).collect(Collectors.toList());
         if(pluginList.isEmpty()){
-            LogUtils.addLog("listPlugin fail, plugin dir has no plugin : " + file.getAbsolutePath());
             return Collections.emptyList();
         }
         List<PluginEntity> pluginEntities = new ArrayList<>();
         pluginList.forEach(f -> {
             File[] subFiles = f.listFiles();
-            for (File subFile : subFiles) {
-                if ("plugin.json".equals(subFile.getName())) {
-                    String name = JsonUtils.readJsonFileStringValue(subFile, "name");
-                    if (StringUtils.isEmpty(name)) {
-                        continue;
+            PluginEntity pluginEntity = new PluginEntity();
+            pluginEntity.setFile(f);
+            if (null != subFiles) {
+                Arrays.stream(subFiles).filter(subFile -> "pre_load.py".equals(subFile.getName()))
+                        .findFirst().ifPresent(callbackFile->{
+                            ScriptUtils.runPreLoad(pluginEntity, "pre_load", "", "");
+                        });
+                for (File subFile : subFiles) {
+                    if ("plugin.json".equals(subFile.getName())) {
+                        String name = JsonUtils.readJsonFileStringValue(subFile, "name");
+                        if (StringUtils.isEmpty(name)) {
+                            continue;
+                        }
+                        pluginEntity.setName(name);
+                        pluginEntity.setSubMenus(doListPlugins(f.getAbsolutePath()));
+                        pluginEntities.add(pluginEntity);
                     }
-                    PluginEntity pluginEntity = new PluginEntity();
-                    pluginEntity.setName(name);
-                    pluginEntity.setFile(f);
-                    pluginEntity.setSubMenus(doListPlugins(f.getAbsolutePath()));
-                    pluginEntities.add(pluginEntity);
                 }
             }
+
         });
         return pluginEntities;
     }
