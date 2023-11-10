@@ -5,6 +5,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.SelectionModel;
+import com.intellij.openapi.editor.impl.EditorImpl;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.project.Project;
@@ -44,6 +45,10 @@ public class ProjectService {
     public ProjectDto currentInfo(){
         VirtualFile virtualFile = CommonDataKeys.VIRTUAL_FILE.getData(event.getDataContext());
         Editor editor = CommonDataKeys.EDITOR.getData(event.getDataContext());
+        if (editor instanceof EditorImpl) {
+            EditorImpl editor1 = (EditorImpl) editor;
+            virtualFile = editor1.getVirtualFile();
+        }
         Assert.assertNotNull("no file or dir selected", virtualFile);
 
         List<ProjectModule> modules = new ArrayList<>();

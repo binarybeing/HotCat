@@ -6,14 +6,21 @@ import com.intellij.codeInsight.hints.InlayHintsSink;
 import com.intellij.codeInsight.hints.presentation.InlayPresentation;
 import com.intellij.codeInsight.hints.presentation.MouseButton;
 import com.intellij.codeInsight.hints.presentation.PresentationFactory;
+import com.intellij.facet.ModifiableFacetModel;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.impl.EditorImpl;
+import com.intellij.openapi.fileEditor.FileEditor;
+import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.PsiJavaToken;
 import com.intellij.psi.util.PsiTreeUtil;
 import io.github.binarybeing.hotcat.plugin.EventContext;
 import io.github.binarybeing.hotcat.plugin.entity.PluginEntity;
+import io.github.binarybeing.hotcat.plugin.utils.ApplicationRunnerUtils;
 import io.github.binarybeing.hotcat.plugin.utils.LogUtils;
 import io.github.binarybeing.hotcat.plugin.utils.ScriptUtils;
 import kotlin.Unit;
@@ -33,7 +40,6 @@ import java.util.List;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class HotCatFactoryInlayHintsCollector extends FactoryInlayHintsCollector {
@@ -43,6 +49,7 @@ public class HotCatFactoryInlayHintsCollector extends FactoryInlayHintsCollector
     private static Map<String, Map<String, List<Pair<String, String>>>> fileListenerMap = new ConcurrentHashMap<>();
 
     private static HashMap<PluginEntity, String> listeningPlugins = new HashMap<>();
+    private static Map<PsiJavaFile, Map<String, Set<SimpleHint>>> hintCaches = new ConcurrentHashMap<>();
 
     static {
         listenerMap.put("__open_baidu", Pair.of("百度", "https://www.baidu.com"));
@@ -74,29 +81,25 @@ public class HotCatFactoryInlayHintsCollector extends FactoryInlayHintsCollector
                 .stream().map(t -> Pair.of(t.getText().trim(), t.getTextOffset()))
                 .filter(s -> s.getLeft().startsWith("\""))
                 .filter(s -> s.getLeft().endsWith("\""))
-                .filter(s -> s.getLeft().length() < 20)
+                .map(p-> Pair.of(p.getLeft().replaceAll("\"", ""), p.getRight()))
+                .filter(s -> s.getLeft().length() < 40)
                 .filter(s -> s.getLeft().length() > 0)
                 .collect(Collectors.toList());
         if (list.isEmpty()) {
             return false;
         }
-        Pair<String, Integer> pair = list.get(0);
+
         params.put("tokens", list);
         params.put("file", javaFile.getVirtualFile().getPath());
-        CompletableFuture<Void> completableFuture = EventContext.empyEvent().thenAccept(e -> {
-
-            ArrayList<CompletableFuture<String>> arrayList = new ArrayList<>();
+        EventContext.empyEvent().thenAccept(e -> {
             for (Map.Entry<PluginEntity, String> entry : listeningPlugins.entrySet()) {
                 PluginEntity pluginEntity = entry.getKey();
                 Long eventId = EventContext.registerEvent(e, pluginEntity);
                 CompletableFuture<String> future = ScriptUtils.commonPython3Run(eventId, entry.getValue(), "hint_collect", new Gson().toJson(params), true);
-                arrayList.add(future);
-            }
-            for (CompletableFuture<String> future : arrayList) {
-                try {
-                    String s = future.get(2, TimeUnit.SECONDS);
+                future.thenAccept(s -> {
                     JsonElement element = JsonParser.parseString(s);
                     JsonArray array = element.getAsJsonArray();
+                    Map<String, Set<SimpleHint>> map = new HashMap<>();
                     for (JsonElement jsonElement : array) {
                         JsonObject object = jsonElement.getAsJsonObject();
                         String text = object.get("text").getAsString();
@@ -105,40 +108,96 @@ public class HotCatFactoryInlayHintsCollector extends FactoryInlayHintsCollector
                         if (object.has("jump")) {
                             jump = object.get("jump").getAsString();
                         }
-
                         int offset = object.get("offset").getAsInt();
                         if (hint.length() > 200) {
                             hint = hint.substring(0, 200);
                         }
                         String shortHint = hint;
-                        if (shortHint.length() > 5) {
-                            shortHint = shortHint.substring(0, 6) + " ...";
+                        if (shortHint.length() > 10) {
+                            shortHint = shortHint.substring(0, 10) + " ...";
                         }
-                        offset = offset + text.length() + 2;
-                        PresentationFactory factory = getFactory();
-                        InlayPresentation presentation = factory.smallText(shortHint);
-                        presentation = invokeWrap(presentation, hint, factory);
-                        if (StringUtils.isNotBlank(jump)) {
-                            presentation = setHoverAndClick(presentation, editor, jump, factory);
+                        if (StringUtils.isAnyEmpty(text, hint, shortHint)) {
+                            continue;
                         }
-
-                        inlayHintsSink.addInlineElement(offset, false, presentation);
+                        SimpleHint simpleHint = new SimpleHint();
+                        simpleHint.text = text;
+                        simpleHint.hint = hint;
+                        simpleHint.shortHint = shortHint;
+                        simpleHint.offset = offset;
+                        simpleHint.jump = jump;
+                        simpleHint.listener = pluginEntity.getFile().getAbsolutePath();
+                        Set<SimpleHint> simpleHints = map.computeIfAbsent(text, k -> {
+                            return new HashSet<>();
+                        });
+                        simpleHints.add(simpleHint);
                     }
 
-                } catch (Exception exception) {
-                    LogUtils.addError(exception, "CompletableFuture get failed");
+                    boolean diff = false;
+                    Map<String, Set<SimpleHint>> tokensHints = hintCaches.computeIfAbsent(javaFile, k -> {
+                        return new ConcurrentHashMap<>();
+                    });
+                    Set<String> tokensSet = new ArrayList<>(list).stream().map(p -> p.getLeft()).collect(Collectors.toSet());
+                    for (Map.Entry<String, Set<SimpleHint>> listEntry : map.entrySet()) {
+                        String text = listEntry.getKey();
+                        tokensSet.remove(text);
+                        Set<SimpleHint> hintsToAdd = listEntry.getValue();
+
+                        Set<SimpleHint> hints = tokensHints.computeIfAbsent(text, k -> {
+                            return new HashSet<>();
+                        });
+
+                        Set<SimpleHint> hintsToRemove = hints.stream().filter(h -> Objects.equals(h.listener, pluginEntity.getFile().getAbsolutePath()))
+                                .collect(Collectors.toSet());
+
+                        boolean noChange = Objects.equals(hintsToAdd, hintsToRemove);
+                        if (!noChange) {
+                            hints.removeAll(hintsToRemove);
+                            hints.addAll(hintsToAdd);
+                        }
+                        diff = diff || !noChange;
+
+                    }
+                    diff = diff || !tokensSet.isEmpty();
+                    for (String noMentioned : tokensSet) {
+                        Set<SimpleHint> hints = tokensHints.get(noMentioned);
+                        Set<SimpleHint> collect = hints.stream().filter(h -> Objects.equals(h.listener, pluginEntity.getFile().getAbsolutePath())).collect(Collectors.toSet());
+                        hints.removeAll(collect);
+                    }
+                    if (diff) {
+                        Runnable runner = () -> {
+                            FileEditorManager instance = FileEditorManager.getInstance(javaFile.getProject());
+                            FileEditor selectedEditor = instance.getSelectedEditor();
+                            VirtualFile file = selectedEditor.getFile();
+                            instance.closeFile(file);
+                            instance.openFile(file, true);
+                        };
+                        ApplicationManager.getApplication().invokeLater(runner, ModalityState.defaultModalityState());
+
+                    }
+
+                });
+            }
+        });
+        Map<String, Set<SimpleHint>> tokensHints = hintCaches.computeIfAbsent(javaFile, k -> {
+            return new ConcurrentHashMap<>();
+        });
+        for (Pair<String, Integer> token : list) {
+            Set<SimpleHint> hints = tokensHints.get(token.getLeft());
+            if (hints != null && hints.size() > 0) {
+
+                for (SimpleHint hintObj : hints) {
+                    PresentationFactory factory = getFactory();
+                    InlayPresentation presentation = factory.smallText(hintObj.shortHint);
+                    presentation = invokeWrap(presentation, hintObj.hint, factory);
+                    if (StringUtils.isNotBlank(hintObj.jump)) {
+                        presentation = setHoverAndClick(presentation, editor, hintObj.jump, factory);
+                    }
+                    inlayHintsSink.addInlineElement(token.getRight()+ token.getLeft().length() + 2, true, presentation);
+                            
                 }
             }
-
-
-        });
-        try {
-            completableFuture.get(1, TimeUnit.SECONDS);
-            return true;
-        } catch (Exception exp) {
-            return false;
         }
-
+        return true;
     }
 
     @Override
@@ -248,6 +307,78 @@ public class HotCatFactoryInlayHintsCollector extends FactoryInlayHintsCollector
             });
         } catch (Exception e) {
             return presentation;
+        }
+    }
+
+    class SimpleHint{
+
+        private String listener;
+        private String text;
+        private String hint;
+
+        private String shortHint;
+        private int offset;
+        private String jump;
+
+        public String getText() {
+            return text;
+        }
+
+        public void setText(String text) {
+            this.text = text;
+        }
+
+        public String getHint() {
+            return hint;
+        }
+
+        public void setHint(String hint) {
+            this.hint = hint;
+        }
+
+        public int getOffset() {
+            return offset;
+        }
+
+        public void setOffset(int offset) {
+            this.offset = offset;
+        }
+
+        public String getJump() {
+            return jump;
+        }
+
+        public void setJump(String jump) {
+            this.jump = jump;
+        }
+
+        public String getListener() {
+            return listener;
+        }
+
+        public void setListener(String listener) {
+            this.listener = listener;
+        }
+
+        public String getShortHint() {
+            return shortHint;
+        }
+
+        public void setShortHint(String shortHint) {
+            this.shortHint = shortHint;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            SimpleHint that = (SimpleHint) o;
+            return text.equals(that.text) && hint.equals(that.hint) && jump.equals(that.jump);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(text, hint, jump);
         }
     }
 }

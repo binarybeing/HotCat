@@ -61,46 +61,28 @@ public class ScriptUtils {
     }
 
     public static void runPreLoad(PluginEntity entity, String action, String data, String outputFile){
-        Long eventId = EventContext.registerEmptyEvent(entity);
-        String path = entity.getFile().getAbsolutePath();
-        if (entity.getFile().isFile()) {
-            path = entity.getFile().getParentFile().getAbsolutePath();
-        }
-        if (!path.endsWith("/")) {
-            path += "/";
-        }
-        path += "pre_load.py";
 
-        Map<String, Object> map = new HashMap<>();
-        map.put("action", action);
-        map.put("data", new String(Base64.getEncoder().encode(data.getBytes(StandardCharsets.UTF_8))));
+        EventContext.empyEvent().thenAccept(e->{
+            Long eventId = EventContext.registerEvent(e, entity);
+            String path = entity.getFile().getAbsolutePath();
+            if (entity.getFile().isFile()) {
+                path = entity.getFile().getParentFile().getAbsolutePath();
+            }
+            if (!path.endsWith("/")) {
+                path += "/";
+            }
+            path += "pre_load.py";
 
-        File file = new File(path);
-        if (file.exists()) {
-            run("python3", path, Server.INSTANCE.getPort(), eventId, path, new Gson().toJson(map), outputFile);
-        }
-    }
+            Map<String, Object> map = new HashMap<>();
+            map.put("action", action);
+            map.put("data", new String(Base64.getEncoder().encode(data.getBytes(StandardCharsets.UTF_8))));
 
+            File file = new File(path);
+            if (file.exists()) {
+                run("python3", path, Server.INSTANCE.getPort(), eventId, path, new Gson().toJson(map), outputFile);
+            }
+        });
 
-    public static void runCallback(PluginEntity entity, String action, String data, String outputFile){
-        Long eventId = EventContext.registerEmptyEvent(entity);
-        String path = entity.getFile().getAbsolutePath();
-        if (entity.getFile().isFile()) {
-            path = entity.getFile().getParentFile().getAbsolutePath();
-        }
-        if (!path.endsWith("/")) {
-            path += "/";
-        }
-        path += "callback.py";
-
-        Map<String, Object> map = new HashMap<>();
-        map.put("action", action);
-        map.put("data", new String(Base64.getEncoder().encode(data.getBytes(StandardCharsets.UTF_8))));
-
-        File file = new File(path);
-        if (file.exists()) {
-            run("python3", path, Server.INSTANCE.getPort(), eventId, path, new Gson().toJson(map), outputFile);
-        }
     }
 
     public static CompletableFuture<String> commonPython3Run(Long eventId, String path, String action, String data, boolean needResponse) {

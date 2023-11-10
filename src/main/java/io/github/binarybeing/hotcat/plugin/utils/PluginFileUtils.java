@@ -87,10 +87,8 @@ public class PluginFileUtils {
             PluginEntity pluginEntity = new PluginEntity();
             pluginEntity.setFile(f);
             if (null != subFiles) {
-                Arrays.stream(subFiles).filter(subFile -> "pre_load.py".equals(subFile.getName()))
-                        .findFirst().ifPresent(callbackFile->{
-                            ScriptUtils.runPreLoad(pluginEntity, "pre_load", "", "");
-                        });
+
+                ScriptUtils.runPreLoad(pluginEntity, "pre_load", "", "");
                 for (File subFile : subFiles) {
                     if ("plugin.json".equals(subFile.getName())) {
                         String name = JsonUtils.readJsonFileStringValue(subFile, "name");

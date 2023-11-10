@@ -49,9 +49,6 @@ public class EventContext {
         });
         return future;
     }
-    public static Long registerEmptyEvent(PluginEntity plugin){
-        return registerEvent(anEmptyActionEvent, plugin);
-    }
 
     public static Long registerEvent(AnActionEvent event, PluginEntity plugin){
         eventId = System.currentTimeMillis() + RandomUtils.nextInt(1000, 9999);
