@@ -6,13 +6,13 @@ import com.intellij.codeInsight.hints.InlayHintsSink;
 import com.intellij.codeInsight.hints.presentation.InlayPresentation;
 import com.intellij.codeInsight.hints.presentation.MouseButton;
 import com.intellij.codeInsight.hints.presentation.PresentationFactory;
-import com.intellij.facet.ModifiableFacetModel;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.impl.EditorImpl;
 import com.intellij.openapi.fileEditor.FileEditor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.util.Key;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiJavaFile;
@@ -20,22 +20,25 @@ import com.intellij.psi.PsiJavaToken;
 import com.intellij.psi.util.PsiTreeUtil;
 import io.github.binarybeing.hotcat.plugin.EventContext;
 import io.github.binarybeing.hotcat.plugin.entity.PluginEntity;
-import io.github.binarybeing.hotcat.plugin.utils.ApplicationRunnerUtils;
 import io.github.binarybeing.hotcat.plugin.utils.LogUtils;
+import io.github.binarybeing.hotcat.plugin.utils.PluginFileUtils;
 import io.github.binarybeing.hotcat.plugin.utils.ScriptUtils;
 import kotlin.Unit;
 import kotlin.jvm.functions.Function2;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
+import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -44,16 +47,51 @@ import java.util.stream.Collectors;
 
 public class HotCatFactoryInlayHintsCollector extends FactoryInlayHintsCollector {
 
-    private static Map<String, Pair<String, String>> listenerMap = new ConcurrentHashMap<>();
-
     private static Map<String, Map<String, List<Pair<String, String>>>> fileListenerMap = new ConcurrentHashMap<>();
 
     private static HashMap<PluginEntity, String> listeningPlugins = new HashMap<>();
     private static Map<PsiJavaFile, Map<String, Set<SimpleHint>>> hintCaches = new ConcurrentHashMap<>();
 
     static {
-        listenerMap.put("__open_baidu", Pair.of("百度", "https://www.baidu.com"));
-        listenerMap.put("__open_baibu", Pair.of("百度", null));
+        String fileName = "hints_collector.config";
+        String dirName = PluginFileUtils.getPluginDirName();
+        File configFile = new File(dirName, fileName);
+        if (configFile.exists()) {
+            try {
+                String string = FileUtils.readFileToString(configFile, StandardCharsets.UTF_8);
+                JsonElement element = JsonParser.parseString(string);
+                for (JsonElement jsonElement : element.getAsJsonArray()) {
+                    JsonObject jsonObject = jsonElement.getAsJsonObject();
+                    String name = jsonObject.get("name").getAsString();
+                    String file = jsonObject.get("file").getAsString();
+                    String hintCollector = jsonObject.get("hintCollector").getAsString();
+                    PluginEntity plugin = new PluginEntity();
+                    plugin.setName(name);
+                    plugin.setFile(new File(file));
+                    listeningPlugins.put(plugin, hintCollector);
+                }
+            } catch (Exception e) {
+                boolean delete = configFile.delete();
+                LogUtils.addError(e, "load hotcat config error, try delete file: " + configFile.getAbsolutePath() + ", result=" + delete);
+            }
+        }
+        Runtime.getRuntime().addShutdownHook(new Thread(()->{
+            // listeningPlugins 存储到json 文件中
+            try {
+                List<Map<String, String>> list = new ArrayList<>();
+                for (Map.Entry<PluginEntity, String> entry : listeningPlugins.entrySet()) {
+                    PluginEntity plugin = entry.getKey();
+                    Map<String, String> map = new HashMap<>();
+                    map.put("name", plugin.getName());
+                    map.put("file", plugin.getFile().getAbsolutePath());
+                    map.put("hintCollector", entry.getValue());
+                    list.add(map);
+                }
+                FileUtils.write(configFile, new Gson().toJson(list), StandardCharsets.UTF_8);
+            } catch (Exception e) {
+                LogUtils.addError(e, "save hotcat config error");
+            }
+        }));
     }
 
     public static void listenHintCollectEvent(PluginEntity plugin, String pythonListenerScriptPath) {
@@ -157,19 +195,32 @@ public class HotCatFactoryInlayHintsCollector extends FactoryInlayHintsCollector
                         diff = diff || !noChange;
 
                     }
-                    diff = diff || !tokensSet.isEmpty();
+
                     for (String noMentioned : tokensSet) {
                         Set<SimpleHint> hints = tokensHints.get(noMentioned);
-                        Set<SimpleHint> collect = hints.stream().filter(h -> Objects.equals(h.listener, pluginEntity.getFile().getAbsolutePath())).collect(Collectors.toSet());
-                        hints.removeAll(collect);
+                        if (hints != null) {
+                            Set<SimpleHint> collect = hints.stream().filter(h -> Objects.equals(h.listener, pluginEntity.getFile().getAbsolutePath())).collect(Collectors.toSet());
+                            hints.removeAll(collect);
+                        }
                     }
+
                     if (diff) {
                         Runnable runner = () -> {
                             FileEditorManager instance = FileEditorManager.getInstance(javaFile.getProject());
                             FileEditor selectedEditor = instance.getSelectedEditor();
                             VirtualFile file = selectedEditor.getFile();
-                            instance.closeFile(file);
-                            instance.openFile(file, true);
+                            Key<Boolean> key = Key.create("need_reload");
+                            Boolean needReload = selectedEditor.getUserData(key);
+                            if (needReload == null || needReload) {
+                                instance.closeFile(file);
+                                instance.openFile(file, true);
+                                //第二次打开 reload设置为false
+                                selectedEditor.putUserData(key, false);
+
+                            } else {
+                                selectedEditor.putUserData(key, true);
+                            }
+
                         };
                         ApplicationManager.getApplication().invokeLater(runner, ModalityState.defaultModalityState());
 
@@ -220,15 +271,13 @@ public class HotCatFactoryInlayHintsCollector extends FactoryInlayHintsCollector
             Class<?> roundedClass = Class.forName("com.intellij.codeInsight.hints.InlayPresentationFactory$RoundedCorners");
             Constructor<?> roundedClassConstructor = roundedClass.getConstructor(int.class, int.class);
             Object roundCorner = roundedClassConstructor.newInstance(4, 4);
-
             Class<? extends PresentationFactory> factoryClass = factory.getClass();
-            Method container = factoryClass.getMethod("container", InlayPresentation.class, paddingClass, roundedClass, Color.class, float.class);
-            Object res = container.invoke(factory, presentation, padding, roundCorner, Color.ORANGE, 0);
-
-
 
             Method tooltips = factoryClass.getMethod("withTooltip", String.class, InlayPresentation.class);
-            return (InlayPresentation) tooltips.invoke(factory, hint, res);
+            presentation = (InlayPresentation) tooltips.invoke(factory, hint, presentation);
+
+            Method container = factoryClass.getMethod("container", InlayPresentation.class, paddingClass, roundedClass, Color.class, float.class);
+            return (InlayPresentation)container.invoke(factory, presentation, padding, roundCorner, Color.ORANGE, 0);
         } catch (Exception e) {
             return presentation;
         }
