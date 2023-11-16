@@ -49,7 +49,10 @@ public class ProjectService {
             EditorImpl editor1 = (EditorImpl) editor;
             virtualFile = editor1.getVirtualFile();
         }
-        Assert.assertNotNull("no file or dir selected", virtualFile);
+        ProjectDto ans = new ProjectDto();
+        if (null == virtualFile) {
+            return ans;
+        }
 
         List<ProjectModule> modules = new ArrayList<>();
         for (Module pModule : ModuleManager.getInstance(project).getModules()) {
@@ -108,7 +111,7 @@ public class ProjectService {
             model.setLine(Objects.requireNonNull(editor.getSelectionModel().getSelectionStartPosition()).line);
             editorContent.setSelectModel(model);
         }
-        ProjectDto ans = new ProjectDto();
+
         VirtualFile projectDir = ProjectUtil.guessProjectDir(project);
         ans.setPath(projectDir == null ? "" : projectDir.getPath());
         ans.setName(project.getName());

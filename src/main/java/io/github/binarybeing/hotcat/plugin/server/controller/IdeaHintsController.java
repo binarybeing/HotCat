@@ -32,7 +32,6 @@ public class IdeaHintsController extends BaseEventScriptController {
         JexlExpression expression = super.jexlEngine.createExpression(script);
         MapContext context = new MapContext();
         context.set("hints", hints);
-        context.set("enableBlockOverLimitMsg", "__open_baidu");
         Object result = expression.evaluate(context);
         return Response.success(result);
     }
@@ -46,12 +45,12 @@ public class IdeaHintsController extends BaseEventScriptController {
             this.eventId = eventId;
         }
 
-        public HotCatHints listenHintCollect(String pythonListenerScriptPath){
+        public String listenHintCollect(String pythonListenerScriptPath){
             EventContext.getPluginEntity(eventId)
                     .ifPresent(p->{
                         HotCatFactoryInlayHintsCollector.listenHintCollectEvent(p, pythonListenerScriptPath);
                     });
-            return this;
+            return "ok";
         }
 
         public String refresh(){

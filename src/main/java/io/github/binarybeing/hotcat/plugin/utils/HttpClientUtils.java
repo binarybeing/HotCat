@@ -32,12 +32,14 @@ public class HttpClientUtils {
             try {
                 HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
                 if (response.statusCode() == 200) {
-                    LogUtils.addLog("request url:" + url + " ,response body=" + response.body());
                     return response.body();
                 } else {
-                    LogUtils.addLog("request url:" + url + " error, body=" + response.body());
+                    LogUtils.addLog("request url:" + url + " error, response body: ");
+                    LogUtils.addLog(response.body());
                 }
-            } catch (Exception e) {}
+            } catch (Exception e) {
+                LogUtils.addError(e, "request url:" + url + " error");
+            }
             return null;
         }, service);
     }

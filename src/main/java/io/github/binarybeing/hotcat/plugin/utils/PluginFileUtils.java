@@ -61,7 +61,6 @@ public class PluginFileUtils {
 
     private static List<PluginEntity> doListPlugins(String dir){
         File file = new File(dir);
-        LogUtils.addLog("listPlugin from : " + file.getAbsolutePath());
         if (!file.exists() && !file.mkdir()) {
             LogUtils.addLog("listPlugin fail, plugin dir load fail : " + file.getAbsolutePath());
             return Collections.emptyList();
