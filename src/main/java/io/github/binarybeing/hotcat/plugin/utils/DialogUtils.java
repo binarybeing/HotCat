@@ -1,12 +1,14 @@
 package io.github.binarybeing.hotcat.plugin.utils;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ContainerEvent;
+import java.awt.event.ContainerListener;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
@@ -110,7 +112,26 @@ public class DialogUtils extends DialogWrapper {
 
     public static boolean showPanelDialog(AnActionEvent event, String title, JPanel jPanel) {
         DialogUtils dialogUtils = new DialogUtils(event.getProject(), title, jPanel);
-        dialogUtils.createCenterPanel();
+        JComponent component = dialogUtils.createCenterPanel();
+
+        component.addContainerListener(new ContainerListener() {
+            @Override
+            public void componentAdded(ContainerEvent e) {
+                EventQueue.invokeLater(()->{
+                    dialogUtils.setSize(dialogUtils.getSize().width, 0);
+                    component.updateUI();
+                });
+            }
+
+            @Override
+            public void componentRemoved(ContainerEvent e) {
+                EventQueue.invokeLater(()->{
+                    dialogUtils.setSize(dialogUtils.getSize().width, 0);
+                    component.updateUI();
+                });
+            }
+        });
+
         dialogUtils.setOKButtonText("确认");
         dialogUtils.setCancelButtonText("取消");
         return dialogUtils.showAndGet();

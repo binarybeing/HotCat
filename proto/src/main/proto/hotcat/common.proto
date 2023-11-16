@@ -1,0 +1,35 @@
+syntax="proto3";
+
+package hotcat;
+
+import "google/protobuf/any.proto";
+
+option java_multiple_files = true;
+option java_package = "com.github.binarybeing.hotcat.proto";
+
+message BaseRequest{
+  int64 eventId = 1;
+}
+
+message StringRequest{
+  int64 eventId = 1;
+  optional string param = 2;
+}
+
+message DataResponse{
+  int32 code = 1;
+  optional string msg = 2;
+  optional google.protobuf.Any data = 3;
+}
+
+message StringResponse{
+  int32 code = 1;
+  optional string msg = 2;
+  optional string data = 3;
+}
+
+message BooleanResponse{
+  int32 code = 1;
+  optional string msg = 2;
+  optional bool data = 3;
+}

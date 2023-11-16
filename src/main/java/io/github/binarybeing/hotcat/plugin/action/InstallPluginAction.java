@@ -10,6 +10,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.Consumer;
 import io.github.binarybeing.hotcat.plugin.EventContext;
+ import io.github.binarybeing.hotcat.plugin.HotCatActionGroup;
 import io.github.binarybeing.hotcat.plugin.utils.JsonUtils;
 import io.github.binarybeing.hotcat.plugin.utils.LogUtils;
 import io.github.binarybeing.hotcat.plugin.utils.PluginFileUtils;
@@ -35,7 +36,7 @@ public class InstallPluginAction extends AnAction {
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
-        EventContext.registerEvent(e);
+        EventContext.registerEvent(e, null);
         final FileChooserDescriptor descriptor = new FileChooserDescriptor(true, false,
                 true, true,
                 false, false);
@@ -82,7 +83,6 @@ public class InstallPluginAction extends AnAction {
                             JOptionPane.showMessageDialog(null, "Install Plugin Failed, no __main__.py or plugin.json", "Error", JOptionPane.ERROR_MESSAGE);
                             return;
                         }
-
                         String name = JsonUtils.readJsonFileStringValue(pluginConfig.get(), "name");
                         if (StringUtils.isEmpty(name)) {
                             PluginFileUtils.deleteDir(pluginDir);

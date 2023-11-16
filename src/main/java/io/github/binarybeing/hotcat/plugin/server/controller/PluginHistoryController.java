@@ -11,7 +11,7 @@ import io.github.binarybeing.hotcat.plugin.server.dto.Response;
  */
 public class PluginHistoryController extends AbstractController {
     @Override
-    String path() {
+    public String path() {
         return "/api/plugin/history";
     }
 

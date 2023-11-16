@@ -35,10 +35,6 @@ public class HotCatSubPluginAction extends AnAction {
         }
     }
 
-    @Override
-    protected void setShortcutSet(@NotNull ShortcutSet shortcutSet) {
-        super.setShortcutSet(shortcutSet);
-    }
 
 
 }

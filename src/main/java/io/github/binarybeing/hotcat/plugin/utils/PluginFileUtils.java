@@ -1,26 +1,24 @@
 package io.github.binarybeing.hotcat.plugin.utils;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import com.intellij.util.io.ZipUtil;
 import io.github.binarybeing.hotcat.plugin.entity.PluginEntity;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
+ *
+ * https://www.baidu.com
+ *
  * @author gn.binarybei
  * @date 2022/9/23
  * @note
@@ -69,8 +67,7 @@ public class PluginFileUtils {
             return Collections.emptyList();
         }
         File[] files = file.listFiles();
-        if(files==null){
-            LogUtils.addLog("listPlugin fail, plugin dir has no file : " + file.getAbsolutePath());
+        if (files == null) {
             return Collections.emptyList();
         }
         LogUtils.addLog("listPlugin plugin dir : " + file.getAbsolutePath());
@@ -82,25 +79,29 @@ public class PluginFileUtils {
             return Arrays.stream(subDirFiles).anyMatch(fl -> "__main__.py".equals(fl.getName()));
         }).collect(Collectors.toList());
         if(pluginList.isEmpty()){
-            LogUtils.addLog("listPlugin fail, plugin dir has no plugin : " + file.getAbsolutePath());
             return Collections.emptyList();
         }
         List<PluginEntity> pluginEntities = new ArrayList<>();
         pluginList.forEach(f -> {
             File[] subFiles = f.listFiles();
-            for (File subFile : subFiles) {
-                if ("plugin.json".equals(subFile.getName())) {
-                    String name = JsonUtils.readJsonFileStringValue(subFile, "name");
-                    if (StringUtils.isEmpty(name)) {
-                        continue;
+            PluginEntity pluginEntity = new PluginEntity();
+            pluginEntity.setFile(f);
+            if (null != subFiles) {
+
+                ScriptUtils.runPreLoad(pluginEntity, "pre_load", "", "");
+                for (File subFile : subFiles) {
+                    if ("plugin.json".equals(subFile.getName())) {
+                        String name = JsonUtils.readJsonFileStringValue(subFile, "name");
+                        if (StringUtils.isEmpty(name)) {
+                            continue;
+                        }
+                        pluginEntity.setName(name);
+                        pluginEntity.setSubMenus(doListPlugins(f.getAbsolutePath()));
+                        pluginEntities.add(pluginEntity);
                     }
-                    PluginEntity pluginEntity = new PluginEntity();
-                    pluginEntity.setName(name);
-                    pluginEntity.setFile(f);
-                    pluginEntity.setSubMenus(doListPlugins(f.getAbsolutePath()));
-                    pluginEntities.add(pluginEntity);
                 }
             }
+
         });
         return pluginEntities;
     }
@@ -121,7 +122,9 @@ public class PluginFileUtils {
                 return null;
             }
             File tempDir = new File(pluginHome, "temp");
-            ZipUtil.extract(Path.of(file.toURI()), Path.of(tempDir.toURI()), null, true);
+            Class<ZipUtil> aClass = ZipUtil.class;
+            Method method = aClass.getMethod("extract", File.class, File.class, FilenameFilter.class, boolean.class);
+            method.invoke(null, file, tempDir, null, true);
             File[] files = tempDir.listFiles();
             if (files == null || files.length == 0) {
                 LogUtils.addLog("unzip plugin fail, plugin dir has no file : " + tempDir.getAbsolutePath());

@@ -17,7 +17,7 @@ import org.jetbrains.annotations.NotNull;
  */
 public class IdeaVirtualFileController extends BaseEventScriptController{
     @Override
-    String path() {
+    public String path() {
         return "/api/idea/virtual_file";
     }
 

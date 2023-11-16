@@ -8,10 +8,12 @@ import io.github.binarybeing.hotcat.plugin.action.HotCatSubPluginAction;
 import io.github.binarybeing.hotcat.plugin.action.InstallPluginAction;
 import io.github.binarybeing.hotcat.plugin.entity.PluginEntity;
 import io.github.binarybeing.hotcat.plugin.handlers.InvokePythonPluginHandler;
+import io.github.binarybeing.hotcat.plugin.server.Python3Server;
 import io.github.binarybeing.hotcat.plugin.server.Server;
 import io.github.binarybeing.hotcat.plugin.utils.DialogUtils;
 import io.github.binarybeing.hotcat.plugin.utils.LogUtils;
 import io.github.binarybeing.hotcat.plugin.utils.PluginFileUtils;
+import io.github.binarybeing.hotcat.plugin.utils.ScriptUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -19,9 +21,11 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author gn.binarybei
@@ -30,22 +34,49 @@ import java.util.List;
  */
 public class HotCatActionGroup extends ActionGroup {
     private static Server server;
+
+    private static Python3Server pythonServer;
     private static boolean setShellRunner = false;
 
-
-
+    private static boolean setLoadingGif = false;
+    private static boolean setPythonRunner = false;
     static {
+        new Thread(()->{
+            try {
+                Thread.sleep(10000L);
+                init();
+            }catch (Exception e){}
+        }).start();
+    }
+   private static void init() {
+        LogUtils.addLog("setShellRunner: " + (setShellRunner || setShellRunner()));
+        LogUtils.addLog("setPythonRunner: " + (setPythonRunner || setPythonRunner()));
+        LogUtils.addLog("setLoadingGif: " + (setLoadingGif || setLoadingGif()));
+
         try {
             server = Server.INSTANCE;
             server.start();
         } catch (Exception e) {
             server = null;
         }
+        try {
+//            GrpcServerConfig.INSTANCE.start();
+        }catch (Exception e) {
+            LogUtils.addLog("grpc server start failed: " + e.getMessage());
+        }
+        try {
+            pythonServer = new Python3Server();
+            pythonServer.start();
+            while (!pythonServer.isStarted()) {
+                Thread.sleep(1000L);
+            }
+        } catch (Exception e) {
+            LogUtils.addLog("python3 server start failed: " + e.getMessage());
+        }
+       initCall();
     }
 
     public HotCatActionGroup() {
-
-
     }
 
     @Override
@@ -55,13 +86,20 @@ public class HotCatActionGroup extends ActionGroup {
         IdeaEventHandler handler = new InvokePythonPluginHandler();
         List<AnAction> list = new ArrayList<>(getPlugins(pluginEntities, handler, "HotCat"));
         list.add(new InstallPluginAction());
-        super.setSearchable(true);
+        try {
+            Method method = this.getClass().getMethod("setSearchable", boolean.class);
+            method.invoke(this, true);
+        } catch (NoSuchMethodException exception) {
+            LogUtils.addLog("can not set searchable because idea version problem: " + exception.getMessage());
+        } catch (Exception exception) {
+            LogUtils.addLog("setSearchable error: " + exception.getMessage());
+        }
         return list.toArray(new AnAction[0]);
         //return null;
     }
 
     private List<AnAction> getPlugins(List<PluginEntity> plugins, IdeaEventHandler handler, String groupName){
-        LogUtils.addLog("setShellRunner: " + (setShellRunner || setShellRunner()));
+
         if (CollectionUtils.isEmpty(plugins)) {
             return Collections.emptyList();
         }
@@ -97,14 +135,27 @@ public class HotCatActionGroup extends ActionGroup {
     public void update(@NotNull AnActionEvent e) {
         e.getPresentation().setEnabled(server != null);
     }
-
+    private static boolean setPythonRunner(){
+        copyFile("python_script_executor.py");
+        return setPythonRunner = true;
+    }
     private static boolean setShellRunner(){
-        String cpFileName = PluginFileUtils.getPluginDirName()+"/shell_runner.sh";
+        copyFile("shell_runner.sh");
+        return setShellRunner = true;
+    }
+
+    private static boolean setLoadingGif(){
+        copyFile("loading.gif");
+        return setLoadingGif = true;
+    }
+
+    private static boolean copyFile(String fileName){
+        String cpFileName = PluginFileUtils.getPluginDirName() + "/" + fileName;
         File file = new File(cpFileName);
         if (file.exists()) {
             file.delete();
         }
-        try (InputStream stream = HotCatActionGroup.class.getClassLoader().getResourceAsStream("shell_runner.sh");
+        try (InputStream stream = HotCatActionGroup.class.getClassLoader().getResourceAsStream(fileName);
              FileOutputStream fileOutputStream = new FileOutputStream(cpFileName)) {
             assert stream != null;
             byte[] bytes = new byte[1024];
@@ -113,10 +164,46 @@ public class HotCatActionGroup extends ActionGroup {
                 fileOutputStream.write(bytes, 0, len);
                 fileOutputStream.flush();
             }
-            return setShellRunner = true;
+            return true;
         } catch (Exception e) {
-            DialogUtils.showError("init ShellRunner error", e.getMessage());
+            DialogUtils.showError("init runner error " + fileName, e.getMessage());
             return false;
         }
     }
+
+    public static void initCall(File plugin) {
+        if (plugin == null) {
+            return;
+        }
+        File file = plugin;
+        if (file.isFile()) {
+            file = file.getParentFile();
+        }
+
+
+        String absolutePath = file.getAbsolutePath();
+        if (!absolutePath.endsWith("/")) {
+            absolutePath += "/";
+        }
+        String initScriptPath = absolutePath + "init.py";
+
+
+        CompletableFuture<String> future = ScriptUtils.runPython3(initScriptPath, new String[]{String.valueOf(Server.INSTANCE.getPort()), "999999999", file.getAbsolutePath()});
+        future.whenComplete((s, e)->{
+            if (e != null) {
+                LogUtils.addError(e, "init call failed: " + initScriptPath);
+            } else {
+                LogUtils.addLog("init call finished: " + initScriptPath + ", res=" + s);
+            }
+        });
+    }
+    private static void initCall(){
+        List<PluginEntity> entities = PluginFileUtils.listPlugin();
+        for (PluginEntity plugin : entities) {
+            ScriptUtils.runInit(plugin);
+        }
+
+    }
+
+
 }

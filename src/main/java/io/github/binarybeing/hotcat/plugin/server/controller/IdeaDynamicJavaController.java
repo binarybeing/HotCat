@@ -9,11 +9,11 @@ import io.github.binarybeing.hotcat.plugin.server.dto.Response;
 import io.github.binarybeing.hotcat.plugin.utils.LogUtils;
 import org.apache.commons.jexl3.JexlExpression;
 import org.apache.commons.jexl3.MapContext;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
+import java.lang.reflect.Modifier;
+import java.util.*;
 
 /**
  * @author gn.binarybei
@@ -25,7 +25,7 @@ public class IdeaDynamicJavaController extends BaseEventScriptController{
     private static HotCatClassLoader hotCatClassLoader = new HotCatClassLoader();
 
     @Override
-    String path() {
+    public String path() {
         return "/api/idea/java_executor";
     }
 
@@ -50,18 +50,31 @@ public class IdeaDynamicJavaController extends BaseEventScriptController{
         private JavaExecutor(AnActionEvent event){
             this.event = event;
         }
+        private Map<String, byte[]> testClassMap = new HashMap<String, byte[]>();
 
-        public List<Object> execute(String className, String classBytes) throws Exception {
-            byte[] bytes = classBytes.getBytes();
+        public JavaExecutor prepareClass(String className, String classBytes) throws Exception {
+            testClassMap.put(className, Base64.getDecoder().decode(classBytes.getBytes()));
+            return this;
+        }
+
+
+        public List<Object> execute(String className) throws Exception {
+            doPrepare(testClassMap.size() * testClassMap.size());
             List<Object> invokeRes = new ArrayList<>();
             try {
-
-                Class<?> aClass = hotCatClassLoader.defineClass(className, Base64.getDecoder().decode(bytes));
-                Method[] classMethods = aClass.getMethods();
+                if (!hotCatClassLoader.classes.containsKey(className)) {
+                    throw new RuntimeException("class not found：" + className);
+                }
+                Class<?> executeClass = hotCatClassLoader.classes.get(className);
+                Method[] classMethods = executeClass.getMethods();
                 for (Method method : classMethods) {
+                    // 非abstract方法
+                    if (Modifier.isAbstract(method.getModifiers())) {
+                        continue;
+                    }
                     if (method.getParameterTypes().length == 1
                             && method.getParameterTypes()[0].getName().equals(AnActionEvent.class.getName())) {
-                        invokeRes.add(invokeMethod(aClass, method));
+                        invokeRes.add(invokeMethod(executeClass, method));
                     }
                 }
                 return invokeRes;
@@ -78,9 +91,29 @@ public class IdeaDynamicJavaController extends BaseEventScriptController{
             return method.invoke(o, event);
         }
 
+        private void doPrepare(int maxInvoke) throws Exception{
+            List<String> toRemove = new ArrayList<>();
+            for (Map.Entry<String, byte[]> entry : testClassMap.entrySet()) {
+                try {
+                    Class<?> aClass = hotCatClassLoader.defineClass(entry.getKey(), entry.getValue());
+                    hotCatClassLoader.classes.put(entry.getKey(), aClass);
+                    toRemove.add(entry.getKey());
+                } catch (Exception e) {}
+            }
+            for (String key : toRemove) {
+                testClassMap.remove(key);
+            }
+            if (testClassMap.size() > 0 && maxInvoke > 0) {
+                doPrepare(maxInvoke - 1);
+            }
+        }
+
     }
 
+
     private static class HotCatClassLoader extends ClassLoader{
+
+        private Map<String, Class<?>> classes = new HashMap<String, Class<?>>();
         private ClassLoader classLoader = IdeaDynamicJavaController.class.getClassLoader();
 
         public Class<?> defineClass(String name, byte[] b) {
