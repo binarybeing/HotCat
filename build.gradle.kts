@@ -16,7 +16,7 @@ dependencies {
     implementation("io.github.binarybeing.hotcat:porto:1.0-SNAPSHOT")
 }
 group = "io.github.binarybeing.hotcat"
-version = "1.3.6.193231.5"
+version = "1.3.6.193231.6"
 
 repositories {
     mavenCentral()

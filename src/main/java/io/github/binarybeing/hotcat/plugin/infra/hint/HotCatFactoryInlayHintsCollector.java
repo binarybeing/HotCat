@@ -128,7 +128,7 @@ public class HotCatFactoryInlayHintsCollector extends FactoryInlayHintsCollector
         }
 
         params.put("tokens", list);
-        params.put("file", javaFile.getVirtualFile().getPath());
+
         EventContext.empyEvent().thenAccept(e -> {
             for (Map.Entry<PluginEntity, String> entry : listeningPlugins.entrySet()) {
                 PluginEntity pluginEntity = entry.getKey();
@@ -213,7 +213,10 @@ public class HotCatFactoryInlayHintsCollector extends FactoryInlayHintsCollector
                             Boolean needReload = selectedEditor.getUserData(key);
                             if (needReload == null || needReload) {
                                 instance.closeFile(file);
-                                instance.openFile(file, true);
+                                // 获取当前焦点
+                                boolean focus = selectedEditor.getPreferredFocusedComponent() != null
+                                        && selectedEditor.getPreferredFocusedComponent().isFocusOwner();
+                                instance.openFile(file, focus);
                                 //第二次打开 reload设置为false
                                 selectedEditor.putUserData(key, false);
 
